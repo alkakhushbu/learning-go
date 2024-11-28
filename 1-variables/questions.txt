@@ -1,0 +1,38 @@
+q1. Declare a variable to represent temperature in Celsius.
+Convert this temperature to Fahrenheit using the formula
+
+Use fmt.Printf instead of Println
+// fmt.Printf verbs could be found on top of fmt documentation // https://pkg.go.dev/fmt#hdr-Printing
+Use type casting in Go
+
+
+q2. Create a program to store and print a person's and their project's details. Declare and initialize variables for the following details,
+    Project name (string)
+    Code lines written (uint8)
+    Bugs found (int)
+    Is the project complete? (bool)
+    Average lines of code written per hour (float64)
+    Team lead name (string)
+    Project deadline in days (int)
+    Additionally, demonstrate a uint overflow by initializing the largest possible value for uint and then adding 1 to it
+
+
+q3. Use log.New() and print a log message
+    use shortfile flag and stdFlags for flag argument (bit of Google required)
+// Hint:- first value to this function could be os.Stdout
+// Printing: l.Println("hello this is first log message")
+
+q4. Print default values and Type names of variables from question 2 using printf
+// Quick Tip, Use %v if not sure about what verb should be used,
+// but don't use it in this question :)
+// but generally using %v should be fine
+
+
+q5. {
+      "name": "Alice",
+      "age": 25
+    }
+
+    C:\Users\Alice\Documents\example.txt
+
+    Store above data in string

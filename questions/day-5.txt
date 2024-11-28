@@ -1,0 +1,5 @@
+q1. In main function create a slice of names.
+    Add two elements in it.
+
+    Create a function AddNames which appends new names to the slice
+    Use double pointer concept to make AddNames function work

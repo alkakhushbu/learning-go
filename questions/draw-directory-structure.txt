@@ -1,0 +1,6 @@
+
+Use the following characters to draw structure if needed :
+Vertical line (│)
+Horizontal line (──)
+Connector (├──)
+End connector (└──)

@@ -1,0 +1,7 @@
+q1. Create a struct (Author)
+    Two Field:- Name, Books[slice]
+    Create two methods, one appends new books to the book slice , other prints the struct
+
+    Create a function that accepts the struct and append values to the book slice
+
+    Create a function that would accept the Books field, not the struct and append some more books

@@ -1,0 +1,4 @@
+Book:- https://www.amazon.in/Learning-Go-Jon-Bodner-ebook/dp/B0CS5DY1VN/
+docs: pkg.go.dev
+
+https://go.dev/doc/effective_go

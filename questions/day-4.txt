@@ -1,0 +1,36 @@
+q1. Build a simple CLI calculator to get familiar with Go syntax and basic operations.
+    Create a new project named as cli
+    Create a package calc
+    Add functionalities of +, -, /, % (create these functionalities in 4 different files)
+    In the main.go file ask user to provide operation to be performed and two values
+    Note: User should pass these values from the command line.
+    E.g. + 10 20
+    Handle errors in the code and give useful error messages to the end user.
+
+            cli/
+            ├──cmd/
+            │  └── main.go
+            ├── calc/
+            │  └── add.go
+               └── sub.go
+               └── mod.go
+               └── multiply.go
+            ├── go.mod
+
+q2. Create a function that converts a string to float64, if it is successful it returns the value otherwise an error
+
+q3. Create a function named as StringManipulation.
+    StringManipulation accepts a function and string type as an argument, and it returns string value
+    Possible Functions that it can accept:- trimSpace, toUpper, greet
+
+    Create 3 functions trimSpace, toUpper, greet
+    TrimSpace:- TrimSpace returns a string, with all leading and trailing white space removed, as defined by Unicode.
+    ToUpper:- ToUpper returns string with all Unicode letters mapped to their upper case.
+    Greet: - It takes a name as input, add hello as greeting and return the greeting
+    Hint: use strings package for TrimSpace and ToUpper functionalities
+
+
+q4. Modify the above function to perform the following action
+    stringManipulation(trimSpace(), "\ngfdngbk \n"))
+    Instead of passing trimSpace you need to call the trimSpace function and make the program work
+    Hint: you need to return a function with the signature of what stringManipulation accepts as first parameter

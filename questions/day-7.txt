@@ -1,0 +1,56 @@
+q1. Creating and Using Structs in Go
+        /*
+        Todo:
+         - Define a struct 'Book' with fields 'Title', 'Author', and 'Pages'.
+
+         - Create a function 'Read' which takes a pointer to a Book, and a number of pages to read.
+          After reading, the function should subtract the read pages from the total pages of the book.
+           Account for the case where the number of pages to read is more than the pages in the book.
+           In that case, just set the book's pages to 0.
+
+         - In the main function, create a new book and initialize it with a title, author, and the number of pages.
+         - Then, read some pages from the book and print the title, author, and remaining pages.
+
+        Hint: Use a pointer receiver in the 'Read' method to reflect changes on the original struct.
+        */
+
+q2. Define an interface named Notifier with two methods:
+    SendEmail(): A method that takes a string argument representing the email content and returns a string indicating the email has been sent.
+    SendSMS(): A method that takes a string argument representing the SMS content and returns a string indicating the SMS has been sent.
+    Implement this interface in a struct called NotificationService.
+
+    Call SendEmail() & SendSMS() using interface variable
+
+q3. Create the following directory structure
+            app-/
+                ├──stores/
+                │  └── store.go
+                   └── models.go // to store domain structs
+                │    ├── mysql/
+                │    │   └── mysql.go
+                │    ├── postgres/
+                │       └── postgres.go
+                └── main.go
+                ├── go.mod
+
+    In mysql.go create a Conn struct which stores db connection in string form
+    Create three methods over Conn struct (Create(user) error, Update(name) error, Delete(id) error
+    //Note:- return nil for the errors, assume no error would happen
+    //For now add simple print statement without doing any actual work
+
+    In postgres.go repeat the same steps as we did in mysql.go
+
+    In store.go
+        Create an interface that postgres and mysql package can implement
+
+    In main.go
+        Call postgres and mysql package methods using interface variable
+
+
+q4. Create a map in postgres.go and mysql.go to store user details in the memory
+    Change the signature of methods (Create(user) bool, Update(name) bool, Delete(id) bool)
+    Note:- true would indicate operation has been successful.
+    Add two new methods FetchAll, FetchUser(id)
+    This time write concrete functionalities not simple print statements
+
+

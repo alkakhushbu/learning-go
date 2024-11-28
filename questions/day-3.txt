@@ -1,0 +1,30 @@
+Q1. Write a Go program that:
+    Creates an empty slice with an initial capacity of 1.
+    Appends integers from 1 to 1,000,000 to the slice.
+    Tracks and prints the capacity change every time the slice's capacity increases.
+    Prints the total number of capacity changes at the end.
+
+    Formula:= (currentCap-lastCap) / lastCap * 100
+    // Hint :- use type casting
+
+
+Q2. Create an initial list of users.
+    Create a new slice named as emp from a part users slice.
+    Check both slices length and capacity.
+
+    Append some more user names to the *user* slice.
+    Check len, cap again for both slices
+    Print the values as well
+
+    Append some emp names to the *emp* slice
+    Check len, cap again for both slices
+    Print the values as well
+
+    Compare the contents and capacities of the original list and the modified slice.
+    Try to understand and visualize what is happening
+
+
+Q3. Create a function that takes a list of users
+    This func can append new values to the list or change the existing elems
+    But Make sure this function can't modify the original slice
+    that was created in the main function
