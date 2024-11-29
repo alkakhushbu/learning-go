@@ -5,7 +5,6 @@ import (
 	"question1/stores"
 )
 
-
 type Mysql struct {
 	userMap map[int]stores.User
 	lastId  int
@@ -24,14 +23,25 @@ func (m *Mysql) Create(user stores.User) bool {
 }
 
 func (m *Mysql) Update(id int, name string) bool {
-	user := m.userMap[id]
-	user.Name = name
-	m.userMap[id] = user
-	return true
+	user, ok := m.userMap[id]
+	if ok {
+		user.Name = name
+		m.userMap[id] = user
+		return true
+	} else {
+		fmt.Println("Can't update, user does not exist with id:", id)
+		return false
+	}
 }
 func (m *Mysql) Delete(id int) bool {
-	delete(m.userMap, id)
-	return true
+	_, ok := m.userMap[id]
+	if ok {
+		delete(m.userMap, id)
+		return true
+	} else {
+		fmt.Println("Can't delete, user does not exist with id:", id)
+		return false
+	}
 }
 
 func (m *Mysql) FetchAll() {

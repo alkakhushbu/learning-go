@@ -23,14 +23,25 @@ func (p *Postgres) Create(user stores.User) bool {
 }
 
 func (p *Postgres) Update(id int, name string) bool {
-	user := p.userMap[id]
-	user.Name = name
-	p.userMap[id] = user
-	return true
+	user, ok := p.userMap[id]
+	if ok {
+		user.Name = name
+		p.userMap[id] = user
+		return true
+	} else {
+		fmt.Println("Can't update, user does not exist with id:", id)
+		return false
+	}
 }
 func (p *Postgres) Delete(id int) bool {
-	delete(p.userMap, id)
-	return true
+	_, ok := p.userMap[id]
+	if ok {
+		delete(p.userMap, id)
+		return true
+	} else {
+		fmt.Println("Can't delete, user does not exist with id:", id)
+		return false
+	}
 }
 
 func (p *Postgres) FetchAll() {
