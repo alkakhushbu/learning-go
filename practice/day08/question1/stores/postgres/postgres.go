@@ -2,20 +2,20 @@ package postgres
 
 import (
 	"fmt"
-	"question1/stores"
+	"question1/stores/models"
 )
 
 type Postgres struct {
-	userMap map[int]stores.User
+	userMap map[int]models.User
 	lastId  int
 }
 
 func NewConnection() *Postgres {
-	mySql := &Postgres{userMap: make(map[int]stores.User, 5)}
+	mySql := &Postgres{userMap: make(map[int]models.User, 5)}
 	return mySql
 }
 
-func (p *Postgres) Create(user stores.User) bool {
+func (p *Postgres) Create(user models.User) bool {
 	lastId := p.lastId + 1
 	p.userMap[lastId] = user
 	p.lastId = lastId

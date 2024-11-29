@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"question1/stores"
+	"question1/stores/models"
 	"question1/stores/mysql"
 	"question1/stores/postgres"
 )
@@ -18,24 +19,27 @@ q1. Create a map in postgres.go and mysql.go to store user details in the memory
 
 func main() {
 	fmt.Println("Hello World!")
-	user1 := stores.User{Name: "alka"}
-	user2 := stores.User{Name: "John"}
-	// users := []stores.User{
-	// 	{Name: "alka"},
-	// 	{Name: "alka"},
-	// }
-	var database stores.Database
-	database = mysql.NewConnection()
+	user1 := models.User{Name: "alka"}
+	user2 := models.User{Name: "John"}
+
+	// var database stores.Database
+	mysql := mysql.NewConnection()
+	store := stores.NewStore(mysql)
+	database := store.Database
 	database.Create(user1)
 	database.Create(user2)
 	database.Update(1, "khushbu")
+	database.Delete(3)
 	database.FetchAll()
 	database.FetchUser(3)
 
-	database = postgres.NewConnection()
+	postgres := postgres.NewConnection()
+	store = stores.NewStore(postgres)
+	database = store.Database
 	database.Create(user1)
 	database.Create(user2)
 	database.Update(1, "khushbu")
+	database.Delete(3)
 	database.FetchAll()
 	database.FetchUser(3)
 }

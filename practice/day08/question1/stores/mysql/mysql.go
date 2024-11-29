@@ -2,20 +2,20 @@ package mysql
 
 import (
 	"fmt"
-	"question1/stores"
+	"question1/stores/models"
 )
 
 type Mysql struct {
-	userMap map[int]stores.User
+	userMap map[int]models.User
 	lastId  int
 }
 
 func NewConnection() *Mysql {
-	mySql := &Mysql{userMap: make(map[int]stores.User, 5)}
+	mySql := &Mysql{userMap: make(map[int]models.User, 5)}
 	return mySql
 }
 
-func (m *Mysql) Create(user stores.User) bool {
+func (m *Mysql) Create(user models.User) bool {
 	lastId := m.lastId + 1
 	m.userMap[lastId] = user
 	m.lastId = lastId
