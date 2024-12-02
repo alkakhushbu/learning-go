@@ -1,0 +1,18 @@
+q1. Create a function that converts string to an integer
+    if any alphabets are passed, wrap strconv error and ErrStringValue error (create ErrStringValue error)
+
+    ErrStringValue contains a message that 'value is of string type' and return the wrapped errors
+    otherwise return the original error
+
+    use the regex to check if value is of string type or not
+    Hint: regexp.MatchString(`^[a-zA-Z]`, s)
+    fmt.Errorf("%w %w") // to wrap error
+
+    In main function check if ErrStringValue error was wrapped in the chain or not
+    If yes, log a message 'value must be of int type not string' and log original error message alongside as well
+
+
+q2. Create 3 functions f1, f2, f3
+    f1() call f2(), f2() call f3()
+    each layer would return the error, wrap the error from each layer
+    print stack trace using debug.Stack to get a complete stack trace

@@ -9,6 +9,9 @@ import (
 
 // "Don’t design with interfaces, discover them". - Rob Pike
 
+// Few exceptions- If you want to mock for testing,
+//or there are multiple types that need to implement interface immediately
+
 // Bigger the interface weaker the abstraction // Rob Pike
 
 type Reader interface {
