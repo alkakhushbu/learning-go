@@ -1,0 +1,26 @@
+q1. create a function work that takes a work id and print work {id} is going on
+    In the main function run a loop to run work function 10 times
+    make the work function call concurrent
+    Make sure your program waits for work function to finish gracefully
+
+q2. Follow up to the previous question
+    Spin up one anonymous goroutine in the work function
+    This goroutine prints some stuff on the screen and sleeps for 100ms
+    Make sure you wait for every goroutine to finish and end everything gracefully
+
+
+q3. Create a bookCab function that takes the name of the user trying to book a cab
+    Assume only one user can book a cab at a time
+    Create a global variable to hold the number of cabs available
+
+    Check if a cab is available, if yes print a msg cab is available otherwise unavailable
+
+    In the main function, run a loop 5 times and call bookCab function as goroutine to simulate
+    multiple users are trying to book a cab
+
+
+
+
+
+
+

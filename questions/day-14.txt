@@ -1,0 +1,21 @@
+q1.  Make a struct Theater with the following fields: Seats(int=1), RWMutex, userName chan string.
+
+     Create two methods over a struct
+
+     The first method book a seat in the theater. If the seat is equal to zero, no one can book it.
+     ( In the booking method, put simple print statements that show booking has been made if seats are available)
+
+     Once the seat is booked in Theater, add the name of the user in the userName channel.
+     Create a second Method, printInvoice(),  It fetches the userName from the channel and print it.
+
+    Note:-
+     Call the bookSeats & printInvoice() method as a goroutine in the main function.
+     For example:-
+
+     for i:=1; i<=3; i++ {
+          go t.bookSeats()
+     }
+     go t.printInvoice()
+
+     The program should quit gracefully without deadlock.
+

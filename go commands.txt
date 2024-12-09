@@ -1,0 +1,12 @@
+go commands
+
+#create a build file
+go build main.go
+
+#execute and run the go program
+go run main.go
+
+#detect race
+go run -race .\main.go
+
+GODEBUG=gctrace=1
