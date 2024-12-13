@@ -1,0 +1,31 @@
+q1. Create a handler which accepts any kind of json and prints it
+    check if client is still connected or not
+    if client is connected then return json processed otherwise just move on
+
+    Hint: use map[string]any if not sure about json structure
+    any type has a tradeoff as well, you can't access the fields directly,
+    type assertion needs to be done every time
+
+    TO find the JSON what user has sent, you can use r.Body
+
+q2. Create a middleware which logs request url, http request method and time to complete the request
+    Hint: time package can help
+
+
+q. Develop a REST API for a task management system.
+   Use gin or chi
+# Task Management APIs
+   POST    /api/v1/tasks                 # Create a new task
+   GET     /api/v1/tasks/:id             # Get a specific task by ID
+   GET     /api/v1/tasks                 # Get all tasks (filter/sort optional)
+   PUT     /api/v1/tasks/:id             # Update task details
+   DELETE  /api/v1/tasks/:id             # Delete a task
+   PATCH   /api/v1/tasks/:id/status      # Update task status (e.g., In Progress, Done)
+
+   Store tasks in postgres
+   Organize your code in different packages
+
+   Try if you can achieve this
+   - Decouple the handlers from actual implementation using interfaces
+   => Handler should not know what you are using internally whether it is db or inmemory
+

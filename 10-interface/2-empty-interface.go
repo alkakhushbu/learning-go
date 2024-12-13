@@ -15,6 +15,7 @@ func main() {
 	a = "hello"
 	_, _ = a, b
 	//b, ok := a.(bool) // type assertion to fetch concrete value from any type
+	//d, ok := a.(string)
 	//if !ok {
 	//	fmt.Println("not of bool type")
 	//	return
