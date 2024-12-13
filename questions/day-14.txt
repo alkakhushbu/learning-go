@@ -4,8 +4,8 @@ q1.  Make a struct Theater with the following fields: Seats(int=1), RWMutex, use
 
      The first method book a seat in the theater. If the seat is equal to zero, no one can book it.
      ( In the booking method, put simple print statements that show booking has been made if seats are available)
-
      Once the seat is booked in Theater, add the name of the user in the userName channel.
+
      Create a second Method, printInvoice(),  It fetches the userName from the channel and print it.
 
     Note:-

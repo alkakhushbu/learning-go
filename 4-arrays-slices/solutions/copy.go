@@ -10,7 +10,7 @@ func main() {
 
 	// make sure enough length is present in the backing array,
 	// copy only cares about length
-	// src, dest
+	// dest,src
 	copy(b, x[1:4])
 	b[0] = 1000 // different copy of , so no changes in x
 	b = append(b, 99)

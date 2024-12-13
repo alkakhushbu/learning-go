@@ -1,0 +1,8 @@
+Q1. Write a Go program that:
+    Creates an empty slice with an initial capacity of 1.
+    Appends integers from 1 to 1,000,000 to the slice.
+    Tracks and prints the capacity change every time the slice's capacity increases.
+    Prints the total number of capacity changes at the end.
+
+    Formula:= (currentCap-lastCap) / lastCap * 100
+    // Hint :- use type casting

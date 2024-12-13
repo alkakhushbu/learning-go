@@ -10,3 +10,10 @@ go run main.go
 go run -race .\main.go
 
 GODEBUG=gctrace=1
+
+//install 3rd party library module
+go get <3rd party module name>
+
+//use for restructure the go mod file
+go mod tidy
+

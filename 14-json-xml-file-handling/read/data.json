@@ -1,0 +1,11 @@
+{
+
+	"database_host": "localhost",
+	"database_port": 5432,
+	"database_username": "myuser",
+	"database_password": "mypassword",
+	"server_port": 8080,
+	"server_debug": true,
+	"server_timeout": 30
+
+}

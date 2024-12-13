@@ -1,0 +1,10 @@
+q1. Create a table and insert one record in it using pgx package
+    Perform and update operation as well.
+    Create separate functions for each operation
+
+q2. Write a select (id,name,email) from tableName query to fetch all the records
+    Steps:-
+        user query method
+        run a for loop on rows.Next()
+        inside the loop scan values using rows.Scan
+        print things inside the loop

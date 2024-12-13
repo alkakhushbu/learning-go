@@ -1,0 +1,5 @@
+q1. Create docker compose file to run  postgres container
+    Connect to postgres using pgx
+    Create movies table using Go program
+    Insert two records within transaction to movies table
+    Update one record using optimistic locking

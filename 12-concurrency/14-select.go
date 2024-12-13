@@ -82,7 +82,6 @@ func main() {
 			// whichever case is not blocking exec that first
 			//whichever case is ready first, exec that.
 			// possible cases are chan recv , send , default
-
 			case g := <-get:
 				fmt.Println(g)
 			case p := <-post:

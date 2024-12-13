@@ -1,0 +1,8 @@
+2024/12/10 18:56:59 Error in opening file: file/log.txt Error: open file/log.txt: The system cannot find the path specified.
+2024/12/10 18:56:59 File saved successfully!!
+2023-07-11 13:20:13 - Successful: user registration.
+________________________
+2023-07-11 13:20:13 - Successful: user registration.
+________________________
+2024/12/10 18:57:41 File saved successfully!!.
+________________________

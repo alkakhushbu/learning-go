@@ -1,0 +1,8 @@
+# Start Containers in Detached Mode
+docker compose up -d
+
+# Verify Docker Containers
+docker-compose ps
+
+# Stop and remove docker containers
+docker-compose down

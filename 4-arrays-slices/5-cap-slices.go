@@ -32,6 +32,7 @@ func main() {
 append(i,70,90,300) // allocation would happen as we don't have enough cap to fit three values
 	underlying array -> [10 20 30 40 50,60,70,80,90, , , , ] len =9 cap = 13
 
-	If the capacity of s is not large enough to fit the additional values, append allocates a new, sufficiently large underlying array that fits both the existing slice elements and the additional values.
+	If the capacity of s is not large enough to fit the additional values, append allocates a new,
+    sufficiently large underlying array that fits both the existing slice elements and the additional values.
     Otherwise, append re-uses the underlying array.
 */

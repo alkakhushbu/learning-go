@@ -1,0 +1,20 @@
+[
+  {
+    "password_hash": "\u003c#$%^\u0026*(*\u0026^%$\u003e",
+    "perms": {
+      "admin": true
+    }
+  },
+  {
+    "password_hash": "\u003c$%^\u0026*()\u003e",
+    "perms": {
+      "admin": false
+    }
+  },
+  {
+    "password_hash": "\u003c$%^\u0026*(\u003e",
+    "perms": {
+      "admin": true
+    }
+  }
+]
