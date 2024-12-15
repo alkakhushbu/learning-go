@@ -6,3 +6,7 @@ CREATE TABLE tasks (
     status VARCHAR(50),
     managedby VARCHAR(255)
 );
+
+	// `SELECT name, start_time, completion_time, status, managedby
+	// FROM tasks
+	// WHERE id=$1;`

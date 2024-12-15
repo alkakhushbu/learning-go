@@ -16,7 +16,6 @@ q1. Create docker compose file to run postgres container
     Update one record using optimistic locking
 */
 
-
 func CreateConnection() (*pgxpool.Pool, error) {
 	const (
 		host     = "localhost"
