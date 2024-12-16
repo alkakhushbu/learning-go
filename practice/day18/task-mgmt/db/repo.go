@@ -7,29 +7,30 @@ import (
 	"time"
 )
 
-func CreateTask(task *Task) (int, error) {
+func CreateTask(ctx context.Context, newTask *NewTask) (*Task, error) {
 	insertQuery := `INSERT INTO tasks (name, status, managedby, start_time, completion_time)
-					VALUES ($1, $2, $3, $4, $5) returning id;`
+					VALUES ($1, $2, $3, $4, $5) returning id,name, status, managedby, start_time, completion_time;`
 	// name, status, managedby := "Handlerfunc for Get tasks by id", "In Progress", "Jane"
 	startTime := time.Now().UTC()
 	completionTime := startTime.AddDate(0, 0, 30)
-	var id int
-	err := pgxConn.QueryRow(context.Background(), insertQuery,
-		task.Name, task.Status, task.ManagedBy, startTime, completionTime).Scan(&id)
+	var task = &Task{}
+	err := pgxConn.QueryRow(ctx, insertQuery,
+		newTask.Name, newTask.Status, newTask.ManagedBy, startTime, completionTime).
+		Scan(&task.Id, &task.Name, &task.Status, &task.ManagedBy, &task.StartTime, &task.CompletionTime)
 	if err != nil {
 		log.Println("error in insert query:", err)
-		return 0, err
+		return task, err
 	}
-	log.Println("Task insert successful with id:", id)
-	return id, nil
+	log.Println("Task insert successful with id:", task.Id)
+	return task, nil
 }
 
-func GetTaskById(id int) (*Task, error) {
+func GetTaskById(ctx context.Context, id int) (*Task, error) {
 	selectQuery := `SELECT id, name, status, managedby, start_time, completion_time
 	FROM tasks
 	WHERE id=$1;`
 	var task = &Task{}
-	err := pgxConn.QueryRow(context.Background(), selectQuery, id).
+	err := pgxConn.QueryRow(ctx, selectQuery, id).
 		Scan(&task.Id, &task.Name, &task.Status, &task.ManagedBy, &task.StartTime, &task.CompletionTime)
 	if err != nil {
 		log.Println("error in scanning query row:", err)
@@ -39,10 +40,10 @@ func GetTaskById(id int) (*Task, error) {
 	return task, nil
 }
 
-func GetAllTasks() ([]Task, error) {
+func GetAllTasks(ctx context.Context) ([]Task, error) {
 	selectQuery := `SELECT id, name, status, managedby, start_time, completion_time FROM tasks;`
 	tasks := make([]Task, 0)
-	rows, err := pgxConn.Query(context.Background(), selectQuery)
+	rows, err := pgxConn.Query(ctx, selectQuery)
 	if err != nil {
 		log.Println("Found error in task table query", err)
 		return nil, err
@@ -59,27 +60,27 @@ func GetAllTasks() ([]Task, error) {
 	return tasks, nil
 }
 
-func UpdateTask(id int, task *Task) (*Task, error) {
-	if task.Name == "" || task.Status == "" || task.ManagedBy == "" {
+func UpdateTask(ctx context.Context, id int, newTask *NewTask) (*Task, error) {
+	if newTask.Name == "" || newTask.Status == "" || newTask.ManagedBy == "" {
 		return nil, errors.New("empty task field(s) name,task status, or managedBy")
 	}
 	updateQuery := `UPDATE tasks
 					SET name=$1, status=$2, managedby=$3 WHERE id = $4
 					returning id, name, status, managedby, start_time, completion_time;`
 
-	var newTask = &Task{}
-	err := pgxConn.QueryRow(context.Background(), updateQuery, task.Name, task.Status, task.ManagedBy, id).
-		Scan(&newTask.Id, &newTask.Name, &newTask.Status, &newTask.ManagedBy, &newTask.StartTime, &newTask.CompletionTime)
+	var task = &Task{}
+	err := pgxConn.QueryRow(ctx, updateQuery, newTask.Name, newTask.Status, newTask.ManagedBy, id).
+		Scan(&task.Id, &task.Name, &task.Status, &task.ManagedBy, &task.StartTime, &task.CompletionTime)
 	if err != nil {
 		return nil, err
 	}
-	return newTask, nil
+	return task, nil
 }
 
-func DeleteTask(id int) error {
+func DeleteTask(ctx context.Context, id int) error {
 	deleteQuery := `DELETE FROM tasks WHERE id=$1;`
 	log.Println("Found task with id:", id)
-	res, err := pgxConn.Exec(context.Background(), deleteQuery, id)
+	res, err := pgxConn.Exec(ctx, deleteQuery, id)
 	if err != nil {
 		return err
 	}
@@ -90,19 +91,20 @@ func DeleteTask(id int) error {
 	return nil
 }
 
-func UpdateTaskStatus(id int, task *Task) (*Task, error) {
+func UpdateTaskStatus(ctx context.Context, id int, newTask *NewTask) (*Task, error) {
 
-	if task.Status == "" {
+	if newTask.Status == "" {
 		return nil, errors.New("empty task field: status")
 	}
 	updateQuery := `UPDATE tasks
 					SET status=$1 WHERE id = $2
 					returning id, name, status, managedby, start_time, completion_time;`
 
-	err := pgxConn.QueryRow(context.Background(), updateQuery, task.Status, id).
+	var task = &Task{}
+	err := pgxConn.QueryRow(ctx, updateQuery, newTask.Status, id).
 		Scan(&task.Id, &task.Name, &task.Status, &task.ManagedBy, &task.StartTime, &task.CompletionTime)
 	if err != nil {
 		return nil, err
 	}
-	return &task, nil
+	return task, nil
 }

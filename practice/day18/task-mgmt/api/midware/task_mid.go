@@ -1,6 +1,7 @@
 package midware
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -8,8 +9,10 @@ import (
 	"net/http"
 	"strconv"
 	"task-mgmt/db"
+	"time"
 
 	"github.com/go-chi/chi"
+	"github.com/google/uuid"
 )
 
 type ContextKey string
@@ -25,6 +28,7 @@ var TaskId ContextKey = "taskid"
 // 	})
 // }
 
+// Validation should not be in middle ware
 func ValidateTaskBody(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
@@ -61,6 +65,33 @@ func ValidateTaskId(next http.HandlerFunc) http.HandlerFunc {
 		next(w, r)
 	}
 }
-func Logging(http.Handler) http.Handler {
-	panic("Not implemented")
+func Log(next http.Handler) http.Handler {
+	// return func(w http.ResponseWriter, r *http.Request) {
+	// 	t := time.Now().UTC()
+	// 	log.Println("Logging started", t)
+	// 	log.Println(r.URL.Path, r.Method)
+	// 	fn(w, r)
+	// 	diff := time.Since(t)
+	// 	log.Println("Logging ended", diff)
+	// }
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t := time.Now().UTC()
+		log.Println("Logging started", t)
+		log.Println(r.URL.Path, r.Method)
+		next.ServeHTTP(w, r)
+		diff := time.Since(t)
+		log.Println("Logging ended", diff)
+	})
+}
+
+func ReqIdMid(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := uuid.NewString()
+		ctx := r.Context()                       // fetching the ctx object from the request
+		ctx = context.WithValue(ctx, TaskId, id) // creating an updated ctx with a traceId store in it
+		r = r.WithContext(ctx)                   // putting context inside the request object
+		next(w, r)                               // calling next thing in the chain
+
+	}
 }

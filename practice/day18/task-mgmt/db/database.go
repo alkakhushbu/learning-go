@@ -73,5 +73,5 @@ func CreateTableTask() {
 		log.Println("Create table task failed:", err)
 		return
 	}
-	log.Println("Create table task successful:", cmdTag)
+	log.Println("Create table task successful:", cmdTag.RowsAffected())
 }

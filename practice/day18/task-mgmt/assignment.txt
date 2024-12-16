@@ -7,11 +7,14 @@ q. Develop a REST API for a task management system.
    PUT     /api/v1/tasks/:id             # Update task details
    DELETE  /api/v1/tasks/:id             # Delete a task
    PATCH   /api/v1/tasks/:id/status      # Update task status (e.g., In Progress, Done)
+   PATCH   /api/v1/tasks/:id/            # Update any field except id status
 
    Store tasks in postgres
+   Add log, recovery(use built in from chi or gin), and traceId middleware
    Organize your code in different packages
 
-   Try if you can achieve this
+   Try if you can achieve this (Bonus)
    - Decouple the handlers from actual implementation using interfaces
-   => Handler should not know what you are using internally whether it is db or inmemory
 
+   Bonus
+    Implement Partial updates
