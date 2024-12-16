@@ -11,7 +11,7 @@ import (
 func main() {
 	mux := chi.NewRouter()
 	// applies middlewares to all the routes using the muxer
-	mux.Use(middleware.Logger, middleware.Recoverer)
+	mux.Use(middleware.Logger, middleware.Recoverer, mid)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 	})
 
@@ -43,4 +43,10 @@ func main() {
 		w.Write([]byte("Hello, " + firstName + " " + lastName + "!"))
 	})
 
+}
+
+func mid(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next.ServeHTTP(w, r)
+	})
 }
