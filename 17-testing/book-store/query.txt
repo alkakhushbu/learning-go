@@ -1,0 +1,10 @@
+CREATE TABLE books (
+    id SERIAL PRIMARY KEY,        -- Unique identifier (primary key)
+    title VARCHAR(255) NOT NULL,               -- Title of the book, cannot be NULL
+    author_name VARCHAR(255) NOT NULL,         -- Author's name
+    author_email VARCHAR(255) NOT NULL,        -- Author's email
+    description TEXT,                          -- Description of the book
+    category VARCHAR(100),                     -- Category of the book
+    price DECIMAL(10, 2) NOT NULL,             -- Price of the book with precision (10 digits, 2 decimals)
+    stock INT                                  -- Number of copies in stock
+);
