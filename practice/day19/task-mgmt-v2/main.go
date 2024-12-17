@@ -8,15 +8,15 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"task-mgmt-v2/db"
 	"task-mgmt-v2/handlers"
+	"task-mgmt-v2/models"
 	"time"
 )
 
 func main() {
 	//set up database connection
 	log.Println("Creating new connection to DB.....")
-	conn, err := db.NewConn()
+	conn, err := models.NewConn()
 	if err != nil {
 		log.Println("Error creating connection to DB:", err)
 		panic(err)

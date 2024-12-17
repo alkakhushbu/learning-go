@@ -37,7 +37,7 @@ func (h *Handler) createTask(c *gin.Context) {
 	}
 
 	//create task in db
-	task, err := h.conn.CreateTask(ctx, &nt)
+	task, err := h.conn.CreateTask(ctx, nt)
 
 	// validation post db layer call
 	if err != nil {
@@ -131,7 +131,7 @@ func (h *Handler) updateTaskById(c *gin.Context) {
 	}
 
 	//db layer call
-	task, err := h.conn.UpdateTask(ctx, id, &at)
+	task, err := h.conn.UpdateTask(ctx, id, at)
 
 	//validation post db layer call
 	if err != nil {

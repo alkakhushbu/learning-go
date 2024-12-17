@@ -2,19 +2,19 @@ package handlers
 
 import (
 	"log"
-	"task-mgmt-v2/db"
 	"task-mgmt-v2/midware"
+	"task-mgmt-v2/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )
 
 type Handler struct {
-	conn     *db.Conn
+	conn     *models.Conn
 	validate *validator.Validate
 }
 
-func SetupGINRoutes(conn *db.Conn) *gin.Engine {
+func SetupGINRoutes(conn *models.Conn) *gin.Engine {
 	log.Println("Inside StartHandlerService function")
 	h := Handler{conn: conn, validate: validator.New()}
 	route := gin.Default()
@@ -27,7 +27,7 @@ func SetupGINRoutes(conn *db.Conn) *gin.Engine {
 	api.GET("/tasks/:id", h.getTaskById)
 	api.GET("/tasks", h.getAllTasks)
 
-	// todo make this PATCH
+	// todo: make this PATCH
 	api.PUT("/tasks/:id", h.updateTaskById)
 
 	return route
