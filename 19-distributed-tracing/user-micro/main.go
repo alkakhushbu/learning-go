@@ -3,22 +3,21 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
-
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
+	"log"
+	"runtime/debug"
 
 	// Importing OpenTelemetry packages for HTTP instrumentation and tracing
-	"net/http"
-
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	trace2 "go.opentelemetry.io/otel/trace"
+	"net/http"
 )
 
 var users = map[string]string{
@@ -137,7 +136,8 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 		span.SetAttributes(attribute.String("user_id", userId))                          // Add user ID for context.
 		span.SetAttributes(attribute.String("traceId", traceId))                         // Add trace ID for easier debugging.
 		span.SetStatus(codes.Error, err.Error())                                         // Mark the span as an error.
-		http.Error(w, err.Error(), http.StatusBadRequest)                                // Notify the client with the error.
+
+		http.Error(w, err.Error(), http.StatusBadRequest) // Notify the client with the error.
 		return
 	}
 
@@ -163,6 +163,7 @@ func GetUserById(ctx context.Context, userId string, tracer trace2.Tracer) (stri
 	}
 
 	// If user does not exist, mark the span as an error.
+	span.AddEvent(string(debug.Stack()))
 	span.SetStatus(codes.Error, "user not found in database")
 	return "", errors.New("user not found") // Return an error.
 }

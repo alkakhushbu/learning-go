@@ -11,18 +11,36 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
 func (h *Handler) CreateTask(c *gin.Context) {
-	ctx := c.Request.Context()
-	traceId := pkg.GetTraceId(ctx)
+	// ctx := c.Request.Context()
+	// traceId := pkg.GetTraceId(ctx)
+
+	// Start a new span for the handler
+	tracer := otel.Tracer("user-micro")
+	ctx, span := tracer.Start(c.Request.Context(), "Handler-CreateTask")
+	defer span.End()
+
+	//get traceId from tracer span
+	traceId := span.SpanContext().TraceID().String()
+
 	nt := models.NewTask{}
 	err := c.ShouldBindWith(&nt, binding.JSON)
 	if err != nil {
 		slog.Error("Error in task binding:",
 			slog.String("Error:", err.Error()),
 			slog.String("TraceId", traceId))
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+
+		// Handle and record any errors in the span
+		span.SetAttributes(semconv.HTTPResponseStatusCodeKey.Int(http.StatusBadRequest)) // HTTP 400
+		span.SetAttributes(attribute.String("traceId", traceId))
+		span.SetStatus(codes.Error, err.Error())
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
 
@@ -32,6 +50,12 @@ func (h *Handler) CreateTask(c *gin.Context) {
 		slog.Error("Invalid request body, please provide required fields:",
 			slog.String("Error:", err.Error()),
 			slog.String("TraceId", traceId))
+
+		// Handle and record any errors in the span
+		span.SetAttributes(semconv.HTTPResponseStatusCodeKey.Int(http.StatusBadRequest)) // HTTP 400
+		span.SetAttributes(attribute.String("traceId", traceId))
+		span.SetStatus(codes.Error, err.Error())
+
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
@@ -44,10 +68,16 @@ func (h *Handler) CreateTask(c *gin.Context) {
 		slog.Error("Error in creating new task:",
 			slog.String("Error:", err.Error()),
 			slog.String("TraceId", traceId))
+
+		// Handle and record any errors in the span
+		span.SetAttributes(semconv.HTTPResponseStatusCodeKey.Int(http.StatusBadRequest)) // HTTP 400
+		span.SetAttributes(attribute.String("traceId", traceId))
+		span.SetStatus(codes.Error, err.Error())
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Error in creating new task"})
 		return
 	}
 	log.Println("New task created:", task)
+	span.SetAttributes(semconv.HTTPResponseStatusCodeKey.Int(http.StatusCreated)) // HTTP 201 Created
 	c.JSON(http.StatusCreated, task)
 }
 

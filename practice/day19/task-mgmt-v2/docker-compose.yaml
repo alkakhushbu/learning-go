@@ -17,7 +17,17 @@ services:
     restart: always
     ports:
       - "8080:8080"
-# docker compose up -d
+
+  # jaeger set up
+  jaeger:
+    image: jaegertracing/jaeger:2.1.0
+    container_name: jaeger
+    ports:
+      - "16686:16686" # Jaeger UI
+      - "4317:4317"
+      - "4318:4318"   # OTLP HTTP
+      - "5778:5778"
+      - "9411:9411"
 volumes:
   postgres-data:
     driver: local
