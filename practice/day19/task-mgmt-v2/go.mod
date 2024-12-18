@@ -6,9 +6,15 @@ require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-playground/validator/v10 v10.20.0
 	github.com/jackc/pgx/v5 v5.7.1
+	github.com/stretchr/testify v1.9.0
+	go.uber.org/mock v0.5.0
 )
 
-require github.com/google/go-cmp v0.6.0 // indirect
+require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/google/go-cmp v0.6.0 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
+)
 
 require (
 	github.com/bytedance/sonic v1.11.6 // indirect

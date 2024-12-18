@@ -10,25 +10,25 @@ import (
 )
 
 type Handler struct {
-	conn     *models.Conn
+	service  models.Service
 	validate *validator.Validate
 }
 
-func SetupGINRoutes(conn *models.Conn) *gin.Engine {
+func SetupGINRoutes(service models.Service) *gin.Engine {
 	log.Println("Inside StartHandlerService function")
-	h := Handler{conn: conn, validate: validator.New()}
+	h := Handler{service: service, validate: validator.New()}
 	route := gin.Default()
 	// route.Use(midware.Logger())
 
 	// the midware.Logger() method can also be placed using route.Use(midware.Logger()) method
 	api := route.Group("/api/v1", midware.Logger())
 
-	api.POST("/tasks", h.createTask)
+	api.POST("/tasks", h.CreateTask)
 	api.GET("/tasks/:id", h.getTaskById)
 	api.GET("/tasks", h.getAllTasks)
 
 	// todo: make this PATCH
-	api.PUT("/tasks/:id", h.updateTaskById)
+	api.PUT("/tasks/:id", h.UpdateTaskById)
 
 	return route
 }

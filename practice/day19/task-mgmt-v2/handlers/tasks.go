@@ -13,7 +13,7 @@ import (
 	"github.com/gin-gonic/gin/binding"
 )
 
-func (h *Handler) createTask(c *gin.Context) {
+func (h *Handler) CreateTask(c *gin.Context) {
 	ctx := c.Request.Context()
 	traceId := pkg.GetTraceId(ctx)
 	nt := models.NewTask{}
@@ -37,7 +37,7 @@ func (h *Handler) createTask(c *gin.Context) {
 	}
 
 	//create task in db
-	task, err := h.conn.CreateTask(ctx, nt)
+	task, err := h.service.CreateTask(ctx, nt)
 
 	// validation post db layer call
 	if err != nil {
@@ -48,7 +48,7 @@ func (h *Handler) createTask(c *gin.Context) {
 		return
 	}
 	log.Println("New task created:", task)
-	c.JSON(http.StatusOK, task)
+	c.JSON(http.StatusCreated, task)
 }
 
 func (h *Handler) getTaskById(c *gin.Context) {
@@ -67,7 +67,7 @@ func (h *Handler) getTaskById(c *gin.Context) {
 		return
 	}
 	slog.Info("Task found", "id", id)
-	task, err := h.conn.GetTaskById(ctx, id)
+	task, err := h.service.GetTaskById(ctx, id)
 	if err != nil {
 		slog.Error("Invalid task id",
 			slog.String("Error", err.Error()),
@@ -82,7 +82,7 @@ func (h *Handler) getTaskById(c *gin.Context) {
 func (h *Handler) getAllTasks(c *gin.Context) {
 	ctx := c.Request.Context()
 	traceId := pkg.GetTraceId(ctx)
-	tasks, err := h.conn.GetAllTasks(ctx)
+	tasks, err := h.service.GetAllTasks(ctx)
 	if err != nil {
 		// log.Printf("Found error in fetching all tasks.. Error: %s", err.Error())
 		// http.Error(w, "Found error in fetching all tasks..", http.StatusNoContent)
@@ -97,7 +97,7 @@ func (h *Handler) getAllTasks(c *gin.Context) {
 	c.JSON(http.StatusOK, tasks)
 }
 
-func (h *Handler) updateTaskById(c *gin.Context) {
+func (h *Handler) UpdateTaskById(c *gin.Context) {
 	//validating id
 	ctx := c.Request.Context()
 	traceId := pkg.GetTraceId(ctx)
@@ -131,7 +131,7 @@ func (h *Handler) updateTaskById(c *gin.Context) {
 	}
 
 	//db layer call
-	task, err := h.conn.UpdateTask(ctx, id, at)
+	task, err := h.service.UpdateTask(ctx, id, at)
 
 	//validation post db layer call
 	if err != nil {
