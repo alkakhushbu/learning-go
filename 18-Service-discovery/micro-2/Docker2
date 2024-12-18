@@ -1,0 +1,37 @@
+FROM golang:1.23.3-alpine AS builder
+
+WORKDIR /app
+# Set the target OS and architecture
+#ENV GOOS=linux
+#ENV GOARCH=amd64
+ENV GOPROXY=direct
+
+
+# Copy go.mod and go.sum first to leverage layer caching
+COPY go.mod go.sum ./
+#if copy go.mod and go.sum before then run go mod tidy and download immediately
+# it would cache the layer so both command would only run if there any changes in go.mod or go.sum
+# Download and cache dependencies
+#RUN go mod download
+
+# Run go mod tidy to ensure that dependencies are consistent
+RUN go mod tidy
+
+# Copy the source code into the container
+COPY . .
+
+RUN go build -o micro-2 .
+
+
+FROM alpine:latest
+
+WORKDIR /app
+
+# Copy the compiled binary from the previous stage
+COPY --from=builder /app/micro-2 .
+
+# Copy the .env file into the container
+
+EXPOSE 80
+
+CMD ["./micro-2"]

@@ -9,6 +9,7 @@ import (
 	"task-mgmt-v2/models"
 	"task-mgmt-v2/models/mockmodels"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -22,11 +23,18 @@ func TestCreateTask(t *testing.T) {
 		Status:    "Registered",
 		ManagedBy: "Charles",
 	}
-	task := models.Task{}
+	task := models.Task{
+		Id:             1,
+		Name:           "Middleware for Validating request body",
+		Status:         "Registered",
+		ManagedBy:      "Charles",
+		StartTime:      time.Date(2024,12,19)(),
+		CompletionTime: time.Now().AddDate(0, 0, 1),
+	}
 
 	ctx := context.WithValue(context.Background(), midware.TraceId, "Test-Trace-ID")
 
-	// create test table, an array
+	// create test table, an array.
 	tt := [...]struct {
 		name      string
 		body      []byte
@@ -40,9 +48,9 @@ func TestCreateTask(t *testing.T) {
 				"status": "Registered",
 				"managedBy": "Charles"}`),
 		code:     http.StatusCreated,
-		response: "",
+		response: `{"id":1,"name":"Middleware for Validating request body","status":"Registered","managedBy":"Charles","startTime":"2024-12-18T09:34:51.1108306+05:30","completionTime":"2024-12-19T09:34:51.1108306+05:30"}`,
 		mockStore: func(m *mockmodels.MockService) {
-			m.EXPECT().CreateTask(gomock.Any(), gomock.Eq(newTask)).Return(gomock.Eq(task), nil).Times(1)
+			m.EXPECT().CreateTask(gomock.Any(), gomock.Eq(newTask)).Return(task, nil).Times(1)
 		},
 	}}
 
@@ -68,6 +76,7 @@ func TestCreateTask(t *testing.T) {
 			router.ServeHTTP(rec, req)
 
 			require.Equal(t, http.StatusCreated, rec.Code)
+			require.Equal(t, tc.response, rec.Body.String())
 		})
 	}
 }

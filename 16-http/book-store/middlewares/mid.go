@@ -47,7 +47,7 @@ func Logger() gin.HandlerFunc {
 
 		slog.Info("COMPLETED", slog.String("TRACE ID", traceId),
 			slog.String("Method", c.Request.Method), slog.Any("URL Path", c.Request.URL.Path),
-			slog.Int("Status Code", c.Writer.Status()), slog.Int64("duration ms,",
+			slog.Int("Status Code", c.Writer.Status()), slog.Int64("duration μs,",
 				time.Since(requestStartTime).Milliseconds()))
 
 	}
