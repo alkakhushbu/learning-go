@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/hashicorp/consul/api"
 	"os"
@@ -61,6 +62,10 @@ func registerServiceConsul() {
 
 	// Register the service with Consul. If this process fails, stop the application.
 	err = consul.Agent().ServiceRegister(registration)
+	if err != nil {
+		panic(err)
+	}
+	err = consul.Agent().ServiceDeregister(fmt.Sprintf("%s-%s", "micro-1-", address))
 	if err != nil {
 		panic(err)
 	}

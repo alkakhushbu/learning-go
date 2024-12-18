@@ -21,3 +21,4 @@ COPY --from=builder /app/micro-2 /app/micro-2
 EXPOSE 80
 
 CMD ["/app/micro-2"]
+
