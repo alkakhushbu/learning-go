@@ -6,9 +6,9 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
-	"task-mgmt-v2/midware"
-	"task-mgmt-v2/models"
-	"task-mgmt-v2/models/mockmodels"
+	"task-mgmt-v3/midware"
+	"task-mgmt-v3/models"
+	"task-mgmt-v3/models/mockmodels"
 	"testing"
 
 	"github.com/gin-gonic/gin"

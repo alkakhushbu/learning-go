@@ -4,38 +4,59 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"task-mgmt-v2/models"
-	"task-mgmt-v2/pkg"
+	"task-mgmt-v3/models"
+	"task-mgmt-v3/pkg"
 
 	"log/slog"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
 func (h *Handler) CreateTask(c *gin.Context) {
-	ctx := c.Request.Context()
-	traceId := pkg.GetTraceId(ctx)
+	// ctx := c.Request.Context()
+	// traceId := pkg.GetTraceId(ctx)
+
+	// Start a new span for the handler
+	tracer := otel.Tracer("task-mgmt-v3")
+	ctx, span := tracer.Start(c.Request.Context(), "Handler-CreateTask")
+	defer span.End()
+
+	//get traceId from tracer span
+	traceId := span.SpanContext().TraceID().String()
 
 	nt := models.NewTask{}
 
-	//bind the struct pointer using JSON binding
+	//bind newTask struct pointer using json binding
 	err := c.ShouldBindWith(&nt, binding.JSON)
 	if err != nil {
 		slog.Error("Error in JSON binding:",
 			slog.String("Error:", err.Error()),
 			slog.String("TraceId", traceId))
 
+		// Handle and record any errors in the span
+		span.SetAttributes(semconv.HTTPResponseStatusCodeKey.Int(http.StatusBadRequest)) // HTTP 400
+		span.SetAttributes(attribute.String("traceId", traceId))
+		span.SetStatus(codes.Error, err.Error())
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Error in JSON binding"})
 		return
 	}
 
-	//validate request body
+	//validate request body struct
 	err = h.validate.Struct(&nt)
 	if err != nil {
 		slog.Error("Validation failed error, please provide required fields:",
 			slog.String("Error:", err.Error()),
 			slog.String("TraceId", traceId))
+
+		// Handle and record any errors in the span
+		span.SetAttributes(semconv.HTTPResponseStatusCodeKey.Int(http.StatusExpectationFailed)) // HTTP 417
+		span.SetAttributes(attribute.String("traceId", traceId))
+		span.SetStatus(codes.Error, err.Error())
 
 		c.AbortWithStatusJSON(http.StatusExpectationFailed, gin.H{"error": "Validation failed, please provide required fields"})
 		return
@@ -50,10 +71,15 @@ func (h *Handler) CreateTask(c *gin.Context) {
 			slog.String("Error:", err.Error()),
 			slog.String("TraceId", traceId))
 
+		// Handle and record any errors in the span
+		span.SetAttributes(semconv.HTTPResponseStatusCodeKey.Int(http.StatusInternalServerError)) // HTTP 500
+		span.SetAttributes(attribute.String("traceId", traceId))
+		span.SetStatus(codes.Error, err.Error())
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Error in creating new task"})
 		return
 	}
 	log.Println("New task created:", task)
+	span.SetAttributes(semconv.HTTPResponseStatusCodeKey.Int(http.StatusCreated)) // HTTP 201 Created
 	c.JSON(http.StatusCreated, task)
 }
 
@@ -117,9 +143,10 @@ func (h *Handler) UpdateTaskById(c *gin.Context) {
 	}
 	slog.Info("Task found", " id:", id)
 
+	// validating body
 	var at = models.AlterTask{}
 
-	//bind struct pointer using JSON
+	//bind newTask struct pointer using json binding
 	err = c.ShouldBindJSON(&at)
 	if err != nil {
 		slog.Error("Error in JSON binding:",
@@ -129,7 +156,7 @@ func (h *Handler) UpdateTaskById(c *gin.Context) {
 		return
 	}
 
-	// validating body
+	//validate request body struct
 	err = h.validate.Struct(&at)
 	if err != nil {
 		slog.Error("Invalid request body, please provide required fields:",

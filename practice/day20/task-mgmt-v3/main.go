@@ -8,9 +8,16 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"task-mgmt-v2/handlers"
-	"task-mgmt-v2/models"
+	"task-mgmt-v3/handlers"
+	"task-mgmt-v3/models"
 	"time"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	"go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
 func main() {
@@ -25,6 +32,14 @@ func main() {
 	conn.Ping(context.Background())
 
 	setupLog()
+
+	// setup distributed tracing
+	traceProvider, err := initOpenTelemetry()
+	if err != nil {
+		panic(err)
+	}
+	//shutdown traceprovider when the service is down
+	defer traceProvider.Shutdown(context.Background())
 
 	//set up handler
 	log.Println("Starting Task Management Service")
@@ -43,7 +58,7 @@ func main() {
 		ReadHeaderTimeout: time.Second * 200,
 		WriteTimeout:      time.Second * 200,
 		IdleTimeout:       time.Second * 200,
-		Handler:           handlers.SetupGINRoutes(conn),
+		Handler:           handlers.SetupGINRoutes(conn, traceProvider),
 	}
 
 	// Goroutine to handle server startup and listen for incoming requests
@@ -77,4 +92,32 @@ func setupLog() {
 				AddSource: true, Level: slog.LevelDebug,
 			}))
 	slog.SetDefault(logger)
+}
+
+// Initialize OpenTelemetry for distributed tracing
+func initOpenTelemetry() (*trace.TracerProvider, error) {
+	// Set up the OTLP trace exporter to send tracing data to the OpenTelemetry Collector
+	traceExporter, err := otlptracehttp.New(
+		context.Background(),
+		otlptracehttp.WithInsecure(),                 // No TLS for local development
+		otlptracehttp.WithEndpoint("localhost:4318"), // Collector/Jaeger endpoint
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Configure a TracerProvider
+	traceProvider := trace.NewTracerProvider(
+		trace.WithSampler(trace.AlwaysSample()), // Sample all traces
+		trace.WithBatcher(traceExporter),        // Batch traces in export
+		trace.WithResource(resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceNameKey.String("task-mgmt-v3"), // Set the service name for tracing
+		)),
+	)
+
+	// Register the global TracerProvider and propagators
+	otel.SetTracerProvider(traceProvider)
+	otel.SetTextMapPropagator(propagation.TraceContext{})
+	return traceProvider, nil
 }
