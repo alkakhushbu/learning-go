@@ -1,0 +1,14 @@
+services:
+  hello-service:
+    build: ./hello-service
+    container_name: hello-service
+    ports:
+      - "8081:80"
+#    depends_on:
+#      - consul
+    networks:
+      - web
+
+networks:
+  web:
+    driver: bridge

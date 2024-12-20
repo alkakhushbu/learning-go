@@ -1,0 +1,11 @@
+q. From book store call another microservice that print a book has been added in the database
+    and return a response from this new microservice: Book:id logging done
+    Add distributed tracing to this
+
+
+q2. Create a gateway microservice that calls hello-service(use existing from 20-aws-ecs)
+    Use consul for service discovery,
+    Gateway service should use consul to hit hello-service
+    Write dockerfile for the gateway-microservice
+    Write docker-compose.yml
+    Deploy to ecs

@@ -3,8 +3,11 @@ package main
 import (
 	"context"
 	"errors"
+	"io"
 	"log"
 	"net/http"
+
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
@@ -42,12 +45,46 @@ func main() {
 	r.Use(otelgin.Middleware("user-micro"))
 
 	// Step 4: Define the `/user` endpoint
-	r.GET("/user", GetUser)
+	r.GET("/user/:id", GetUser)
+	r.GET("/call-order-service", CallOrderService)
 
 	// Step 5: Start the server on port 8086
 	if err := r.Run(":8086"); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
+}
+
+func CallOrderService(c *gin.Context) {
+	ctx, span := otel.Tracer("user-micro").Start(c.Request.Context(), "CallOrderService")
+	defer span.End()
+
+	client := &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://localhost:8089/order", nil)
+	if err != nil {
+		log.Printf("Failed to construct request for the order service: %v", err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Failed to call the order service: %v", err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("Failed to call order service: %v", err)
+		c.AbortWithStatusJSON(
+			http.StatusInternalServerError,
+			gin.H{"error": err.Error()})
+		return
+	}
+
+	span.SetStatus(codes.Ok, "order service response received")
+	log.Printf("Order service response: %s", string(b))
+	c.String(http.StatusOK, string(b))
 }
 
 // Initialize OpenTelemetry for distributed tracing
@@ -87,7 +124,7 @@ func GetUser(c *gin.Context) {
 	defer span.End()
 
 	// Extract the user ID from the query parameters
-	userId := c.Query("id")
+	userId := c.Param("id")
 	traceId := span.SpanContext().TraceID().String()
 
 	// Retrieve user data from the mock database
