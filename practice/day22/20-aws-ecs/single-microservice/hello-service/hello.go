@@ -41,7 +41,7 @@ func registerServiceConsul() {
 	config := api.DefaultConfig()
 
 	// Set the address of the Consul server. Change this to point to your actual Consul service.
-	config.Address = "http://consul.app:8500"
+	config.Address = "http://consul.alka:8500"
 
 	// Create a new client to interact with Consul.
 	consul, err := api.NewClient(config)

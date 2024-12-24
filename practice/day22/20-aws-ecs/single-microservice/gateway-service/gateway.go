@@ -38,7 +38,7 @@ func proxyToService(serviceName string, c *gin.Context) {
 	config := api.DefaultConfig()
 
 	// Setting the address where Consul is running. Change this to point to your actual Consul server.
-	config.Address = "http://consul.app:8500"
+	config.Address = "http://consul.alka:8500"
 
 	// Create a new client to interact with the Consul API.
 	consul, err := api.NewClient(config)

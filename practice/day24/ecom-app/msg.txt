@@ -1,0 +1,12 @@
+Do not push .env file into github
+
+# Copy the migrations folder into the container
+COPY --from=builder /app/internal/stores/postgres/migrations ./internal/stores/postgres/migrations
+# Copy the .env file into the container
+COPY .env .
+ 
+Adminer login:
+server: user-postgres (the container name, same as the server name)
+user: postgres
+password: postgres
+database: postgres

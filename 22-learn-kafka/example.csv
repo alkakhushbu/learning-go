@@ -1,0 +1,5 @@
+city,employee_id,employee_name,position,age,skills,projects,salary,manager,remote,dependents
+New York,1001,John Doe,Senior Software Engineer,35,"Go, Python, AWS, Kubernetes","Project Alpha, Project Beta",150000,,false,
+New York,1002,Jane Smith,,28,"Cybersecurity, Cloud Security, Penetration Testing",,,"Certified Ethical Hacker",true,
+San Francisco,2001,Alice Johnson,Data Scientist,32,,"Forecast AI, Customer Insights",135000,,false,
+London,3001,Charles Wilson,Operations Lead,45,"Leadership, Logistics, Strategic Planning",,95000,,false,"John Junior-12; Emily Wilson-9"

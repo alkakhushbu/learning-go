@@ -1,6 +1,7 @@
 services:
   # consul app for service discovery
-  consul.app:
+  # namespace is alka, use this namespace in cloud
+  consul.alka:
     container_name: consul-aws-ecs
     image: hashicorp/consul:1.20
     ports:
