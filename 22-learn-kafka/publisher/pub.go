@@ -3,8 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/twmb/franz-go/pkg/kgo"
 	"time"
+
+	"github.com/twmb/franz-go/pkg/kgo"
 )
 
 // connect kafka using kgo
