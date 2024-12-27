@@ -1,0 +1,4 @@
+/*
+	when a user logs in, create a token for the user if login is a success
+	and return the token back to the client
+*/

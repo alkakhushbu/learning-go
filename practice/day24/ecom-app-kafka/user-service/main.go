@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
+	"crypto/rsa"
 	"encoding/json"
 	"fmt"
-	"github.com/joho/godotenv"
 	"log/slog"
 	"net/http"
 	"os"
@@ -12,9 +12,13 @@ import (
 	"syscall"
 	"time"
 	"user-service/handlers"
+	"user-service/internal/auth"
 	"user-service/internal/stores/kafka"
 	"user-service/internal/stores/postgres"
 	"user-service/internal/users"
+
+	"github.com/golang-jwt/jwt"
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -108,6 +112,14 @@ func startApp() error {
 
 			// Log/Print the event data after successfully unmarshaling
 			fmt.Printf("Successfully received the event : %+v\n", event)
+			// The below method would create the customer over stripe and add it to database
+			err := u.CreateCustomerStripe(context.Background(), event.ID, event.Name, event.Email)
+			if err != nil {
+				slog.Error("error creating customer", slog.Any("error", err))
+				continue
+			}
+			slog.Info("customer created successfully on stripe")
+
 		}
 	}()
 
@@ -122,13 +134,25 @@ func startApp() error {
 		port = "80"
 	}
 
+	/*
+			//------------------------------------------------------//
+		                Generate private and public RSA keys
+			//------------------------------------------------------//
+	*/
+
+	keys, err := auth.NewKeys(privateKey(), publicKey())
+	if err != nil {
+		slog.Error("error in creating RSA keys")
+		panic(err)
+	}
+
 	api := http.Server{
 		Addr:         ":" + port,
 		ReadTimeout:  8000 * time.Second,
 		WriteTimeout: 800 * time.Second,
 		IdleTimeout:  800 * time.Second,
 		//handlers.API returns gin.Engine which implements Handler Interface
-		Handler: handlers.API(u, kafkaConf),
+		Handler: handlers.API(u, kafkaConf, keys),
 	}
 	serverErrors := make(chan error)
 	go func() {
@@ -177,4 +201,32 @@ func setupSlog() {
 	logger := slog.New(logHandler)
 	//SetDefault makes l the default Logger. in our case we would be doing structured logging
 	slog.SetDefault(logger)
+}
+
+func privateKey() *rsa.PrivateKey {
+	privateKeyPem, err := os.ReadFile("private.pem")
+	if err != nil {
+		slog.Error("Error in reading private pem file")
+		panic(err)
+	}
+	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM(privateKeyPem)
+	if err != nil {
+		slog.Error("Error in generating private key from pem file")
+		panic(err)
+	}
+	return privateKey
+}
+
+func publicKey() *rsa.PublicKey {
+	publicKeyPem, err := os.ReadFile("public.pem")
+	if err != nil {
+		slog.Error("Error in reading public pem file")
+		panic(err)
+	}
+	publicKey, err := jwt.ParseRSAPublicKeyFromPEM(publicKeyPem)
+	if err != nil {
+		slog.Error("Error in generating public key from pem file")
+		panic(err)
+	}
+	return publicKey
 }

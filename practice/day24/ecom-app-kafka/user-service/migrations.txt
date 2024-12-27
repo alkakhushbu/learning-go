@@ -1,0 +1,14 @@
+https://github.com/pressly/goose
+
+# 1. Install goose <go install github.com/pressly/goose/v3/cmd/goose@latest>
+# 2. go to the migrations folder in terminal <cd \user-service\internal\stores\postgres\migrations>
+# 3. execute the command <goose create create_table_stripe_users sql> to create migrations
+# 4. Replace the version with 00002. File name would be <00002_create_table_stripe_users.sql>
+# 4. replace sql up and sql down queries with the actual queries
+
+
+$ goose create add_some_column sql
+$ Created new file: 20170506082420_add_some_column.sql
+
+$ goose -s create add_some_column sql
+$ Created new file: 00001_add_some_column.sql

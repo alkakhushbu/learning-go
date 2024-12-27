@@ -5,9 +5,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
+	"log/slog"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/lib/pq"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Conf struct {
@@ -49,14 +52,14 @@ func (c *Conf) InsertUser(ctx context.Context, newUser NewUser) (User, error) {
 		// The `RETURNING` clause retrieves the inserted user's data after the operation.
 		query := `
         INSERT INTO users
-        (id, name, email, password_hash, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING id, name, email, created_at, updated_at
+        (id, name, email, password_hash, created_at, updated_at, roles)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING id, name, email, created_at, updated_at, roles
         `
 		// Execute the `INSERT` query within the transaction to add the new user.
 		// `QueryRowContext` executes the query and scans the resulting row into the `user` struct.
-		err = tx.QueryRowContext(ctx, query, id, newUser.Name, newUser.Email, hashedPassword, createdAt, updatedAt).
-			Scan(&user.ID, &user.Name, &user.Email, &user.CreatedAt, &user.UpdatedAt)
+		err = tx.QueryRowContext(ctx, query, id, newUser.Name, newUser.Email, hashedPassword, createdAt, updatedAt, newUser.Roles).
+			Scan(&user.ID, &user.Name, &user.Email, &user.CreatedAt, &user.UpdatedAt, &user.Roles)
 		if err != nil {
 			// Return an error if the query execution or scan fails.
 			return fmt.Errorf("failed to insert user: %w", err)
@@ -107,4 +110,32 @@ func (c *Conf) withTx(ctx context.Context, fn func(*sql.Tx) error) error {
 
 	// Return nil if the function executes successfully and the transaction is committed.
 	return nil
+}
+
+func (c *Conf) ValidateUser(ctx context.Context, loginUser LoginUser) (User, error) {
+	selectQuery := `select password_hash, roles
+					from users 
+					where email = $1;`
+	email := loginUser.Email
+	password := loginUser.Password
+	var hashedPassword string
+	var roles pq.StringArray
+	err := c.withTx(ctx, func(tx *sql.Tx) error {
+		err := tx.QueryRowContext(ctx, selectQuery, email).Scan(&hashedPassword, &roles)
+		if err != nil {
+			slog.Error("user does not exist", "Error", err.Error())
+			return errors.New("wrong email or password")
+		}
+		err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+		if err != nil {
+			slog.Error("Wrong password", "Error", err.Error())
+			return errors.New("wrong email or password")
+		}
+		return nil
+	})
+
+	if err != nil {
+		return User{}, err
+	}
+	return User{Email: email, PasswordHash: hashedPassword, Roles: roles}, nil
 }
