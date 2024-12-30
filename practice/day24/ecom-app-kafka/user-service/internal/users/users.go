@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -113,22 +112,20 @@ func (c *Conf) withTx(ctx context.Context, fn func(*sql.Tx) error) error {
 }
 
 func (c *Conf) ValidateUser(ctx context.Context, loginUser LoginUser) (User, error) {
-	selectQuery := `select password_hash, roles
+	selectQuery := `select id, name, email, password_hash, created_at, updated_at, roles
 					from users 
 					where email = $1;`
-	email := loginUser.Email
-	password := loginUser.Password
-	var hashedPassword string
-	var roles pq.StringArray
+	var user User
 	err := c.withTx(ctx, func(tx *sql.Tx) error {
-		err := tx.QueryRowContext(ctx, selectQuery, email).Scan(&hashedPassword, &roles)
+		err := tx.QueryRowContext(ctx, selectQuery, loginUser.Email).
+			Scan(&user.ID, &user.Name, &user.Email, &user.PasswordHash, &user.CreatedAt, &user.UpdatedAt, &user.Roles)
 		if err != nil {
-			slog.Error("user does not exist", "Error", err.Error())
+			slog.Error("user email does not exist", "Error", err.Error())
 			return errors.New("wrong email or password")
 		}
-		err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+		err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(loginUser.Password))
 		if err != nil {
-			slog.Error("Wrong password", "Error", err.Error())
+			slog.Error("authentication failed for the user", "Error", err.Error())
 			return errors.New("wrong email or password")
 		}
 		return nil
@@ -137,5 +134,5 @@ func (c *Conf) ValidateUser(ctx context.Context, loginUser LoginUser) (User, err
 	if err != nil {
 		return User{}, err
 	}
-	return User{Email: email, PasswordHash: hashedPassword, Roles: roles}, nil
+	return user, nil
 }

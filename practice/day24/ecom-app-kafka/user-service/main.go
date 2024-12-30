@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/rsa"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -13,11 +12,12 @@ import (
 	"time"
 	"user-service/handlers"
 	"user-service/internal/auth"
+	"user-service/internal/consul"
 	"user-service/internal/stores/kafka"
 	"user-service/internal/stores/postgres"
 	"user-service/internal/users"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
 )
 
@@ -54,6 +54,36 @@ func startApp() error {
 		return err
 	}
 	//------------------------------------------------------//
+	/*
+
+			//------------------------------------------------------//
+		                Setting up Auth layer
+			//------------------------------------------------------//
+	*/
+	slog.Info("main : Started : Initializing authentication support")
+	privatePEM, err := os.ReadFile("private.pem")
+	if err != nil {
+		return fmt.Errorf("reading auth private key %w", err)
+	}
+	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM(privatePEM)
+	if err != nil {
+		return fmt.Errorf("parsing auth private key %w", err)
+	}
+
+	publicPEM, err := os.ReadFile("public.pem")
+	if err != nil {
+		return fmt.Errorf("reading auth public key %w", err)
+	}
+
+	publicKey, err := jwt.ParseRSAPublicKeyFromPEM(publicPEM)
+	if err != nil {
+		return fmt.Errorf("parsing auth public key %w", err)
+	}
+
+	a, err := auth.NewKeys(privateKey, publicKey)
+	if err != nil {
+		return fmt.Errorf("constructing auth %w", err)
+	}
 
 	/*
 		//------------------------------------------------------//
@@ -134,30 +164,31 @@ func startApp() error {
 		port = "80"
 	}
 
-	/*
-			//------------------------------------------------------//
-		                Generate private and public RSA keys
-			//------------------------------------------------------//
-	*/
-
-	keys, err := auth.NewKeys(privateKey(), publicKey())
-	if err != nil {
-		slog.Error("error in creating RSA keys")
-		panic(err)
-	}
-
 	api := http.Server{
 		Addr:         ":" + port,
 		ReadTimeout:  8000 * time.Second,
 		WriteTimeout: 800 * time.Second,
 		IdleTimeout:  800 * time.Second,
 		//handlers.API returns gin.Engine which implements Handler Interface
-		Handler: handlers.API(u, kafkaConf, keys),
+		Handler: handlers.API(u, kafkaConf, a),
 	}
 	serverErrors := make(chan error)
 	go func() {
 		serverErrors <- api.ListenAndServe()
 	}()
+
+	/*
+			//------------------------------------------------------//
+		               Registering with Consul
+			//------------------------------------------------------//
+	*/
+
+	consulClient, regId, err := consul.RegisterWithConsul()
+	defer consulClient.Agent().ServiceDeregister(regId)
+	if err != nil {
+		slog.Error("Error found", slog.Any("Error", err.Error()))
+		return err
+	}
 
 	/*
 			//------------------------------------------------------//
@@ -171,13 +202,14 @@ func startApp() error {
 	case err := <-serverErrors:
 		return fmt.Errorf("server error %w", err)
 	case <-shutdown:
+
 		fmt.Println("Shutting down server gracefully")
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
 		//Shutdown gracefully shuts down the server without interrupting any active connections.
 		//Shutdown works by first closing all open listeners, then closing all idle connections,
-		err := api.Shutdown(ctx)
+		err = api.Shutdown(ctx)
 		if err != nil {
 
 			//forceful closure
@@ -201,32 +233,4 @@ func setupSlog() {
 	logger := slog.New(logHandler)
 	//SetDefault makes l the default Logger. in our case we would be doing structured logging
 	slog.SetDefault(logger)
-}
-
-func privateKey() *rsa.PrivateKey {
-	privateKeyPem, err := os.ReadFile("private.pem")
-	if err != nil {
-		slog.Error("Error in reading private pem file")
-		panic(err)
-	}
-	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM(privateKeyPem)
-	if err != nil {
-		slog.Error("Error in generating private key from pem file")
-		panic(err)
-	}
-	return privateKey
-}
-
-func publicKey() *rsa.PublicKey {
-	publicKeyPem, err := os.ReadFile("public.pem")
-	if err != nil {
-		slog.Error("Error in reading public pem file")
-		panic(err)
-	}
-	publicKey, err := jwt.ParseRSAPublicKeyFromPEM(publicKeyPem)
-	if err != nil {
-		slog.Error("Error in generating public key from pem file")
-		panic(err)
-	}
-	return publicKey
 }

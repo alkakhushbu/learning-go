@@ -8,6 +8,7 @@ import (
 	"user-service/internal/auth"
 	"user-service/internal/stores/kafka"
 	"user-service/internal/users"
+	"user-service/middleware"
 	"user-service/pkg/ctxmanage"
 	"user-service/pkg/logkey"
 
@@ -132,7 +133,7 @@ func (h *Handler) Login(c *gin.Context) {
 	}
 
 	// generate token
-	tokenStr, err := h.keys.GenerateToken(claims)
+	tokenStr, err := h.a.GenerateToken(claims)
 	if err != nil {
 		slog.Error("Token Generation failed", slog.String(logkey.TraceID, traceId),
 			slog.String(logkey.ERROR, err.Error()))
@@ -143,4 +144,16 @@ func (h *Handler) Login(c *gin.Context) {
 	//token generation successful, return token
 	slog.Info("Successful login, token generated")
 	c.JSON(http.StatusOK, gin.H{"token": tokenStr})
+}
+
+func (h *Handler) AuthCheck(c *gin.Context) {
+	// we are using type assertion here for converting any type to auth.Claims
+	// always use ok when using type assertion so that there is no panic
+	claims, ok := c.Request.Context().Value(middleware.ClaimsKey).(auth.Claims)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"Error": "Invalid auth token"})
+		return
+	}
+	userId := claims.Subject
+	c.JSON(200, gin.H{"Authentication Check": "You are authenticated " + userId})
 }

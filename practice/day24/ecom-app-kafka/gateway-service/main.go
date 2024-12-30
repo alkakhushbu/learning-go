@@ -1,10 +1,13 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
+	"gateway-service/handlers"
+	"gateway-service/internal/consul"
 	"log"
 	"os"
+
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -23,17 +26,17 @@ func main() {
 		appPort = "80"
 	}
 	router := gin.New()
-	router.Any("/*path", Handler)
+
+	client, err := consul.CreateConnection()
+	if err != nil {
+		panic(err)
+	}
+	h := handlers.NewHandler(client)
+	router.Any("/*path", h.APIGateway)
 
 	err = router.Run(":" + appPort)
 	if err != nil {
 		log.Panic(err)
 	}
 
-}
-
-func Handler(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"message": "Hello World",
-	})
 }
