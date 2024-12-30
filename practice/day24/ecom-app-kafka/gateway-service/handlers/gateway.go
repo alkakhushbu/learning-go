@@ -3,11 +3,12 @@ package handlers
 import (
 	"fmt"
 	"gateway-service/internal/consul"
-	"github.com/gin-gonic/gin"
-	consulapi "github.com/hashicorp/consul/api"
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/gin-gonic/gin"
+	consulapi "github.com/hashicorp/consul/api"
 )
 
 type Handler struct {

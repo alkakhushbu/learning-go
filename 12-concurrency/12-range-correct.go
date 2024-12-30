@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"sync"
+	"time"
 )
 
 func main() {
@@ -34,6 +35,9 @@ func main() {
 
 		// this goroutine would only run, when correct counter is added to the wgworker waitgroup
 		// so this version works
+		// V2 Rectification: It does not work really. Add wg.Add(1) here to make it work.
+		// Add time.Sleep() after wg.Wait to see the result
+		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			// it would wait until counter not zero
@@ -55,5 +59,5 @@ func main() {
 	}()
 
 	wg.Wait()
-
+	time.Sleep(time.Second)
 }

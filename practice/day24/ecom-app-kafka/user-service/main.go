@@ -159,7 +159,7 @@ func startApp() error {
 		                Setting up http Server
 			//------------------------------------------------------//
 	*/
-	port := os.Getenv("PORT")
+	port := os.Getenv("APP_PORT")
 	if port == "" {
 		port = "80"
 	}

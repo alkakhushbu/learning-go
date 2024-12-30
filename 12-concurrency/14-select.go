@@ -71,8 +71,6 @@ func main() {
 	//}
 
 	wg.Add(1)
-
-	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		//time.Sleep(5 * time.Second)
@@ -96,6 +94,7 @@ func main() {
 		}
 	}()
 
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		wgWorker.Wait()

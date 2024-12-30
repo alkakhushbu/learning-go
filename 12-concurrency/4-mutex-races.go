@@ -43,7 +43,7 @@ func updateX(val int, wg *sync.WaitGroup, m *sync.Mutex) {
 	m.Lock()
 	defer m.Unlock() // releasing the lock
 	x = val
-	fmt.Println(x)
+	fmt.Println("updateX", x)
 
 }
 
@@ -53,5 +53,5 @@ func UpdateLocal(val int, wg *sync.WaitGroup) {
 	// if we run 10 goroutines, then 10 stack frames would be created,
 	// every update would happen in the local stack frame, nothing shared with other goroutines
 	abc = val
-	fmt.Println(abc)
+	fmt.Println("UpdateLocal", abc)
 }

@@ -1,0 +1,9 @@
+1.  when a user logs in, create a token for the user if login is a success
+	and return the token back to the client
+
+2.  Call the validate token from auth struct
+    put the validated claims in context
+    do the next thing in the chain
+
+
+

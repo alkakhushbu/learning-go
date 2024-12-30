@@ -37,7 +37,21 @@ services:
       - ./project/user-postgres/postgres/:/var/lib/postgresql/data/
     networks:
       - web
-  
+
+  product-postgres.alka:
+    image: postgres:16.3-alpine
+    container_name: product-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - ./project/product-postgres/postgres/:/var/lib/postgresql/data/
+    networks:
+      - web
+
   adminer.alka:
     image: adminer
     container_name: adminer
@@ -49,21 +63,39 @@ services:
   
 
 #######################################
-
 # User-Service containers
 #######################################
 
   user-service.alka:
     build: ./user-service
-    container_name: user-service
-    ports:
-      - "8083:80"
+    # remove this name to scale this service
+    # container_name: user-service
+    # remove the ports as we don't want to expose the ports
+    # ports:
+      # - "8083:80"
     depends_on:
       - consul.alka
       - user-postgres.alka
     networks:
       - web
 
+
+#######################################
+# Product-Service containers
+#######################################
+
+  product-service.alka:
+    build: ./product-service
+    # remove this name to scale this service
+    container_name: product-service
+    # remove the ports as we don't want to expose the ports
+    ports:
+      - "8083:80"
+    depends_on:
+      - consul.alka
+      - product-postgres.alka
+    networks:
+      - web
 
   kafka-user-service.alka:
     image: apache/kafka:3.9.0

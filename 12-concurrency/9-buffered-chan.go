@@ -21,7 +21,7 @@ func main() {
 			// when we recv value we make one slot empty in the buffer, and more value could be sent over it
 			// make sure to recv all the values from the sender, no guarantees given by buffered chan
 			time.Sleep(2 * time.Second)
-			fmt.Println(<-ch)
+			fmt.Println("received", <-ch)
 		}
 	}()
 
