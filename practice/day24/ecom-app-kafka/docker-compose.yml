@@ -87,10 +87,10 @@ services:
   product-service.alka:
     build: ./product-service
     # remove this name to scale this service
-    container_name: product-service
+    # container_name: product-service
     # remove the ports as we don't want to expose the ports
-    ports:
-      - "8083:80"
+    # ports:
+      # - "8083:80"
     depends_on:
       - consul.alka
       - product-postgres.alka

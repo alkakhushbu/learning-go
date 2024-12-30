@@ -13,7 +13,7 @@ import (
 	"github.com/stripe/stripe-go/v81/price"
 )
 
-func (c *Conf) CreateProductStripe(ctx context.Context, amount int, productId, productName string) error {
+func (c *Conf) CreateProductStripe(ctx context.Context, amount uint64, productId, productName string) error {
 	// Step 1: Retrieve the Stripe secret key from the environment variables
 	sKey := os.Getenv("STRIPE_TEST_KEY")
 	if sKey == "" {
@@ -47,8 +47,8 @@ func (c *Conf) CreateProductStripe(ctx context.Context, amount int, productId, p
 
 			// Step 8: If the product doesn't have a Stripe product ID, create a new Stripe product
 			params := &stripe.PriceParams{
-				Currency:   stripe.String(string(stripe.CurrencyINR)),
-				UnitAmount: stripe.Int64(int64(amount)),
+				Currency:    stripe.String(string(stripe.CurrencyINR)),
+				UnitAmount:  stripe.Int64(int64(amount)),
 				Recurring:   &stripe.PriceRecurringParams{}, //this is used for charging customer on recurring basis
 				ProductData: &stripe.PriceProductDataParams{Name: stripe.String(productName)},
 			}

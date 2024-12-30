@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"product-service/internal/products"
+	"product-service/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -34,7 +35,7 @@ func API(conf *products.Conf) *gin.Engine {
 
 	r.GET("/ping", healthCheck)
 	v1 := r.Group(prefix)
-	// v1.Use(middleware.Logger())
+	v1.Use(middleware.Logger())
 	{
 		v1.POST("/create", h.CreateProduct)
 	}

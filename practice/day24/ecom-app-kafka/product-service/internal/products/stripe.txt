@@ -1,4 +1,4 @@
-stripe.Key = "sk_test_51Qa9EK2aoIlaxUkXJ6xqTbUVt4jZscLGNWbe0jNAd2alzZ3Xfwb4nRSojjevl9QrcpZqxc4xE46ZLHti7Qx2TuJ300DCCLsMn2"
+stripe.Key = ""
 
 params := &stripe.PriceParams{
   Currency: stripe.String(string(stripe.CurrencyUSD)),

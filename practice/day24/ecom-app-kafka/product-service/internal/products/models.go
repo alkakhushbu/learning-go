@@ -31,7 +31,7 @@ type StripeProduct struct {
 	ProductId       string    `json:"product_id"`
 	StripeProductId string    `json:"stripe_product_id"`
 	PriceId         string    `json:"price_id"`
-	Price           int       `json:"price"`
+	Price           uint64    `json:"price"`
 	CreatedAt       time.Time `json:"created_at"` // Timestamp of creation
 	UpdatedAt       time.Time `json:"updated_at"` // Timestamp of last update
 }

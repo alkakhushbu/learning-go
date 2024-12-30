@@ -70,25 +70,29 @@ func (h *Handler) CreateProduct(c *gin.Context) {
 6.1 if paisa part size is 1, append a zero at the end and covert to integer
 7. Add paisa to rupee
 */
-func ValidatePrice(priceStr string) (int, error) {
+func ValidatePrice(priceStr string) (uint64, error) {
 	//trim extra space from price
 	priceStr = strings.Trim(priceStr, " ")
 
 	//split the price based by dot(.)
 	prices := strings.Split(priceStr, ".")
-	var rupee, paisa int
+	var rupee, paisa uint64
 	if len(prices) == 0 || len(prices) > 2 {
-		return 0, fmt.Errorf("invalid price, empty price field or more than one dot(.)")
+		return 0, fmt.Errorf("invalid price, please provide price in valid format")
 	}
 
-	rupee, err := strconv.Atoi(prices[0])
-	if err != nil || rupee < 0 {
-		return 0, fmt.Errorf("invalid price, not a valid number")
+	rupee, err := strconv.ParseUint(prices[0], 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("invalid price, please provide price in valid format")
 	}
 
 	if len(prices) == 2 {
-		paisa, err = strconv.Atoi(prices[1])
-		if err != nil || paisa < 0 || paisa > 99 {
+		// check size of paisa part for edge cases like 11.001 or 11.011
+		if len(prices[1]) > 2 {
+			return 0, fmt.Errorf("invalid price, please provide price in valid format")
+		}
+		paisa, err = strconv.ParseUint(prices[1], 10, 64)
+		if err != nil {
 			return 0, fmt.Errorf("invalid price, please provide price in valid format")
 		}
 
