@@ -1,0 +1,7 @@
+DB_HOST=localhost
+DB_PORT=5432
+DB_PASSWORD=postgres
+APP_PORT=80
+GIN_MODE=
+#Use the Consul service name
+CONSUL_HTTP_ADDRESS=http://consul.diwakar:8500

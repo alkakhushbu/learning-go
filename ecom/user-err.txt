@@ -1,0 +1,11 @@
+2fce559375"}
+2025-01-02 12:16:05 {"time":"2025-01-02T06:46:05.462921062Z","level":"ERROR","source":{"function":"user-service/pkg/ctxmanage.GetTraceIdOfRequest","file":"/app/pkg/ctxmanage/ctx.go","line":19},"msg":"trace id not present in the context"}
+2025-01-02 12:16:05 {"time":"2025-01-02T06:46:05.46293084Z","level":"ERROR","source":{"function":"user-service/handlers.(*Handler).GetStripeDetails","file":"/app/handlers/stripe-handler.go","line":18},"msg":"missing claims","TRACE_ID":"Unknown","ERROR":"claims not present in the context"}
+
+
+claims not present in the context
+
+
+2025-01-02 16:41:02 {"time":"2025-01-02T11:11:02.494917285Z","level":"INFO","source":{"function":"user-service/handlers.API.Authentication.func2","file":"/app/middleware/auth.go","line":59},"msg":"Authentication successful","TRACE_ID":"31d78ed5-ce07-49d6-a472-3542299db8c6"}
+2025-01-02 16:41:02 {"time":"2025-01-02T11:11:02.494946725Z","level":"ERROR","source":{"function":"user-service/pkg/ctxmanage.GetTraceIdOfRequest","file":"/app/pkg/ctxmanage/ctx.go","line":19},"msg":"trace id not present in the context"}
+2025-01-02 16:41:02 {"time":"2025-01-02T11:11:02.494955316Z","level":"ERROR","source":{"function":"user-service/handlers.(*Handler).GetStripeDetails","file":"/app/handlers/stripe-handler.go","line":18},"msg":"missing claims","TRACE_ID":"Unknown","ERROR":"claims not present in the context"}

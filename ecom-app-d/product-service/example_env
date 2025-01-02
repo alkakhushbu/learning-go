@@ -1,0 +1,13 @@
+POSTGRES_HOST=product-postgres.diwakar
+POSTGRES_PORT=5432
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DATABASE=postgres
+APP_PORT=80
+GIN_MODE=
+
+
+SERVICE_NAME=product-service.diwakar
+SERVICE_ENDPOINT_PREFIX=products
+
+CONSUL_HTTP_ADDRESS=http://consul.diwakar:8500

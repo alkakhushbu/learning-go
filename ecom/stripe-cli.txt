@@ -1,0 +1,12 @@
+Go to https://docs.stripe.com/stripe-cli
+
+Download the zip for windows
+Extract the zip .exe file
+
+Set environment variable by moving the .exe file to the location "go env GOPATH"
+move the .exe file to bin folder to the location "go env GOPATH" 
+ 
+Set up a local listener https://dashboard.stripe.com/test/workbench/webhooks
+    stripe login --api-key <api-key>
+    stripe listen --forward-to localhost/orders/webhook
+    stripe trigger payment_intent.succeeded
