@@ -11,3 +11,7 @@ SERVICE_NAME=product-service.diwakar
 SERVICE_ENDPOINT_PREFIX=products
 
 CONSUL_HTTP_ADDRESS=http://consul.diwakar:8500
+
+
+KAFKA_HOST=kafka-order-service.diwakar
+KAFKA_PORT=9092

@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/stripe/stripe-go/v81"
+	"github.com/stripe/stripe-go/v81/checkout/session"
 	"log/slog"
 	"net/http"
 	"order-service/internal/auth"
@@ -12,11 +16,6 @@ import (
 	"order-service/pkg/logkey"
 	"os"
 	"time"
-
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	"github.com/stripe/stripe-go/v81"
-	"github.com/stripe/stripe-go/v81/checkout/session"
 )
 
 func (h *Handler) Checkout(c *gin.Context) {
@@ -47,14 +46,13 @@ func (h *Handler) Checkout(c *gin.Context) {
 		return
 	}
 
-	// Create channels for user-service goroutine results
+	// Create channels for goroutine results
 	userChan := make(chan UserServiceResponse, 1) // For customer ID
 
 	if h.client == nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "consul client is not initialized"})
 	}
 
-	// call user-service endpoint here
 	go func() {
 
 		address, port, err := consul.GetServiceAddress(h.client, "users")
@@ -102,9 +100,7 @@ func (h *Handler) Checkout(c *gin.Context) {
 		userChan <- userServiceResponse
 	}()
 
-	// Create channels for product-service goroutine results
 	productChan := make(chan ProductServiceResponse, 1) // For stock and price information
-	// call product-service endpoint here
 	go func() {
 		address, port, err := consul.GetServiceAddress(h.client, "products")
 		if err != nil {
@@ -185,7 +181,6 @@ func (h *Handler) Checkout(c *gin.Context) {
 		},
 	}
 
-	//make api-call to create new payment session on stripe
 	sessionStripe, err := session.New(params)
 	if err != nil {
 		slog.Error("error creating Stripe checkout session", slog.String(logkey.TraceID, traceId), slog.String(logkey.ERROR, err.Error()))

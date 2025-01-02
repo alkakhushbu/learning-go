@@ -4,26 +4,32 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"log/slog"
 	"net/http"
+	"order-service/internal/auth"
 	"order-service/internal/consul"
 	"order-service/pkg/ctxmanage"
 	"order-service/pkg/logkey"
+	"os"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/stripe/stripe-go/v81"
+	"github.com/stripe/stripe-go/v81/checkout/session"
 )
 
-func (h* Handler) Checkout(c *gin.Context) {
-	//TODO: create a struct to handle response from the userservice
-	//TODO: Create a function that returns service address and port
-	//TODO: Make a request to user-service to fetch the stripe customer id
-	// 	and unmarshal that into the struct created in step 1
-	//TODO: authorizationHeader := c.Request.Header.Get("Authorization")
-	//    req.Header.Set("Authorization", authorizationHeader)
-	// Print the customer Id if fetched successfully
+func (h *Handler) Checkout(c *gin.Context) {
+	//TODO: Add the order in the orders table, and mark that as pending
 
 	// Get the traceId from the request for tracking logs
 	traceId := ctxmanage.GetTraceIdOfRequest(c)
+	claims, ok := c.Request.Context().Value(auth.ClaimsKey).(auth.Claims)
+	if !ok {
+		slog.Error("claims not found", slog.String(logkey.TraceID, traceId))
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": http.StatusUnauthorized})
+		return
+	}
 
 	type UserServiceResponse struct {
 		StripCustomerId string `json:"stripe_customer_id"`
@@ -41,13 +47,14 @@ func (h* Handler) Checkout(c *gin.Context) {
 		return
 	}
 
-	// Create channels for goroutine results
+	// Create channels for user-service goroutine results
 	userChan := make(chan UserServiceResponse, 1) // For customer ID
 
 	if h.client == nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "consul client is not initialized"})
 	}
 
+	// call user-service endpoint here
 	go func() {
 
 		address, port, err := consul.GetServiceAddress(h.client, "users")
@@ -95,7 +102,9 @@ func (h* Handler) Checkout(c *gin.Context) {
 		userChan <- userServiceResponse
 	}()
 
+	// Create channels for product-service goroutine results
 	productChan := make(chan ProductServiceResponse, 1) // For stock and price information
+	// call product-service endpoint here
 	go func() {
 		address, port, err := consul.GetServiceAddress(h.client, "products")
 		if err != nil {
@@ -139,8 +148,139 @@ func (h* Handler) Checkout(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "error fetching product information"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"customerId": userServiceResponse.StripCustomerId, "price_id": priceID, "stock": stock})
-	//c.JSON(http.StatusOK, gin.H{"stripe_customer_id": userServiceResponse.StripCustomerId})
+	//c.JSON(http.StatusOK, gin.H{"customerId": userServiceResponse.StripCustomerId, "price_id": priceID, "stock": stock})
+
+	// Step 1: Retrieve the Stripe secret key from the environment variables
+	sKey := os.Getenv("STRIPE_TEST_KEY")
+	if sKey == "" {
+		slog.Error("Stripe secret key not found", slog.String(logkey.TraceID, traceId))
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Stripe secret key not found"})
+	}
+
+	// Step 2: Assign the Stripe API key to the Stripe library's internal configuration
+	stripe.Key = sKey
+	orderId := uuid.NewString()
+	// Proceed to create Stripe checkout session
+	params := &stripe.CheckoutSessionParams{
+		Customer:                 stripe.String(userServiceResponse.StripCustomerId),
+		SubmitType:               stripe.String("pay"),
+		Currency:                 stripe.String(string(stripe.CurrencyINR)),
+		BillingAddressCollection: stripe.String("auto"),
+		LineItems: []*stripe.CheckoutSessionLineItemParams{
+			&stripe.CheckoutSessionLineItemParams{
+				Price:    stripe.String(priceID),
+				Quantity: stripe.Int64(1), // Adjust quantity as needed
+			},
+		},
+		Mode:       stripe.String(string(stripe.CheckoutSessionModePayment)),
+		SuccessURL: stripe.String("https://example.com/success"),
+		//ExpiresAt:
+		CancelURL: stripe.String("https://example.com/cancel"),
+		PaymentIntentData: &stripe.CheckoutSessionPaymentIntentDataParams{
+			Metadata: map[string]string{
+				"order_id":   orderId,
+				"user_id":    claims.Subject, // userID in jwt token
+				"product_id": productID,
+			},
+		},
+	}
+
+	//make api-call to create new payment session on stripe
+	sessionStripe, err := session.New(params)
+	if err != nil {
+		slog.Error("error creating Stripe checkout session", slog.String(logkey.TraceID, traceId), slog.String(logkey.ERROR, err.Error()))
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "Failed to create Stripe checkout session"})
+		return
+	}
+
+	// Log success operation
+	slog.Info("successfully initiated Stripe checkout session", slog.String("Trace ID", traceId), slog.String("ProductID", productID), slog.String("CheckoutSessionID", sessionStripe.ID))
+
+	userId := claims.Subject
+	ctx := c.Request.Context()
+	err = h.dbConf.CreateOrder(ctx, orderId, userId, productID, sessionStripe.AmountTotal)
+	if err != nil {
+		slog.Error("error creating order", slog.String(logkey.TraceID, traceId), slog.String(logkey.ERROR, err.Error()))
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "Failed to create order"})
+		return
+	}
+
+	// Respond with the Stripe session ID
+	c.JSON(http.StatusOK, gin.H{"checkout_session_id": sessionStripe.URL})
 }
 
-
+/*
+*
+                  +---------------------+
+                  |       START         |
+                  |   API Call Starts   |
+                  +---------------------+
+                            |
+                            v
+                +----------------------+
+                |   Check STRIPE Key   |
+                | (Environment Config) |
+                +----------------------+
+                            |
+           STRIPE Key FOUND | STRIPE Key MISSING
+                  |                   v
+                  v       +----------------------------+
+    +------------------+  | Respond with Error:         |
+    | Extract User     |  | "Stripe test key not found" |
+    | Claims & TraceID |  +----------------------------+
+    +------------------+
+                  |
+                  v
+          +-------------------+
+          | Extract ProductID |
+          |   From Request    |
+          +-------------------+
+                  |
+        ProductID FOUND | 				ProductID MISSING
+                  |                   			v
+                  v       					+--------------------------------+
+	+----------------------------------+	| Respond with Error: 			 |
+    | Create Channels for Concurrent  	|	| "Product ID Missing"			 |
+	|     Service Calls           		|	+--------------------------------+
+    +----------------------------------+
+                  |
+                  v
+   +---------------------------------------+
+   | Start Parallel Service Calls          |
+   | 1. Call User Service (Stripe ID)      |
+   | 2. Call Product Service (Stock/Price) |
+   +---------------------------------------+
+                  |
+          +-------------------+  +-------------------+
+          | Wait for User ID  |  | Wait for Product   |
+          +-------------------+  | Details            |
+                  |               +-------------------+
+       Stripe ID FOUND |   Product Details FOUND
+                  |                    |
+                  v                    v
+       +---------------------------------------+
+       | Validate Results:                    |
+       | - Valid Stripe Customer ID           |
+       | - Valid Product Details (Stock > 0,  |
+       |   PriceID Exists)                    |
+       +---------------------------------------+
+                  |
+          Validation PASSED | Validation FAILED
+                  |                   	v
+                  v      				----------------------------+
+       +----------------------------+ 	Respond with Error    |
+       | Create Stripe Checkout     | 	"Invalid Inputs"      |
+       | Session with User & Product|	-----------------------+
+       +----------------------------+
+                  |// Create the order in the orders table with a pending status
+                  v
+     +--------------------------------+
+     |  Respond with Checkout URL     |
+     |  (Stripe Session Created)      |
+     +--------------------------------+
+                  |
+                  v
+           +-------------+
+           |     END     |
+           +-------------+
+*/

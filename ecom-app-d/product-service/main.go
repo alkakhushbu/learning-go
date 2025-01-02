@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"product-service/internal/consul"
+	"product-service/internal/stores/kafka"
 
 	"fmt"
 	"github.com/joho/godotenv"
@@ -59,7 +61,30 @@ func startApp() error {
 	}
 
 	/*
+		/*
+			//------------------------------------------------------//
+			//   Consuming Kafka TOPICS [ORDER SERVICE EVENTS]
+			//------------------------------------------------------//
+	*/
+	go func() {
+		ch := make(chan kafka.ConsumeResult)
+		go kafka.ConsumeMessage(context.Background(), kafka.TopicOrderPaid, kafka.ConsumerGroup, ch)
+		for v := range ch {
+			if v.Err != nil {
+				fmt.Println(v.Err)
+				continue
+			}
+			fmt.Printf("Consumed message: %s", string(v.Record.Value))
+			var event kafka.OrderPaidEvent
+			json.Unmarshal(v.Record.Value, &event)
+			// create a method over internal/products to decrement the stock value by quantity
+			fmt.Println("decrement the stock of the product")
+			fmt.Println("successfully decremented the stock of the product")
 
+		}
+	}()
+
+	/*
 			//------------------------------------------------------//
 		                Setting up http Server
 			//------------------------------------------------------//

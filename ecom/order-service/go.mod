@@ -13,6 +13,12 @@ require (
 )
 
 require (
+	github.com/klauspost/compress v1.17.8 // indirect
+	github.com/pierrec/lz4/v4 v4.1.21 // indirect
+	github.com/twmb/franz-go/pkg/kmsg v1.9.0 // indirect
+)
+
+require (
 	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/bytedance/sonic v1.11.6 // indirect
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
@@ -50,7 +56,9 @@ require (
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	github.com/sethvargo/go-retry v0.3.0 // indirect
+	github.com/stripe/stripe-go/v81 v81.2.0
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
+	github.com/twmb/franz-go v1.18.0
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.8.0 // indirect

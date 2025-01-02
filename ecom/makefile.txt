@@ -18,3 +18,7 @@ create multiple instances of user service:
 docker prune 
 docker system prune -a
  
+
+
+docker build --tag 'order-service' .
+docker run --detach 'order-service'

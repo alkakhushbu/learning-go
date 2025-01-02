@@ -3,18 +3,21 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/joho/godotenv"
 	"log/slog"
 	"net/http"
 	"order-service/handlers"
 	"order-service/internal/auth"
 	"order-service/internal/consul"
+	"order-service/internal/orders"
+	"order-service/internal/stores/kafka"
 	postgres "order-service/internal/stores/postgres/migrations"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -67,7 +70,29 @@ func startApp() error {
 	if err != nil {
 		return fmt.Errorf("initializing auth %w", err)
 	}
+	/*
+		//------------------------------------------------------//
+		//    Setting up users package config
+		//------------------------------------------------------//
+	*/
+	dbConf, err := orders.NewConf(db)
+	if err != nil {
+		return err
+	}
 
+	/*
+			//------------------------------------------------------//
+		                Setting up Kafka & Creating topics
+			//------------------------------------------------------//
+	*/
+
+	kafkaConf, err := kafka.NewConf(kafka.TopicOrderPaid, kafka.ConsumerGroup)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("kafka conf", kafkaConf)
+	fmt.Println("connected to kafka")
 	/*
 			//------------------------------------------------------//
 		               Registering with Consul
@@ -103,7 +128,7 @@ func startApp() error {
 		WriteTimeout: 800 * time.Second,
 		IdleTimeout:  800 * time.Second,
 
-		Handler: handlers.API(prefix, a, consulClient),
+		Handler: handlers.API(prefix, a, consulClient, dbConf, kafkaConf),
 	}
 	serverErrors := make(chan error)
 	go func() {
