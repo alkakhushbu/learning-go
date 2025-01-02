@@ -38,6 +38,8 @@ func API(conf *products.Conf) *gin.Engine {
 	v1.Use(middleware.Logger())
 	{
 		v1.POST("/create", h.CreateProduct)
+		// v1.GET("/{productId}", h.GetProduct)
+		v1.GET("/stock/:productId", h.GetProductInfo)
 	}
 
 	return r

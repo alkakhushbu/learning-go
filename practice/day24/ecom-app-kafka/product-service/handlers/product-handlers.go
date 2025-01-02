@@ -60,6 +60,18 @@ func (h *Handler) CreateProduct(c *gin.Context) {
 	c.JSON(http.StatusOK, product)
 }
 
+func (h *Handler) GetProductInfo(c *gin.Context) {
+	productId := c.Param("productId")
+
+	productInfo, err := h.conf.GetProductInfo(c.Request.Context(), productId)
+	if err != nil {
+		slog.Error("Error in fetching product Info", slog.String("productId", productId))
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Error in fetching product Info"})
+		return
+	}
+	c.JSON(http.StatusOK, productInfo)
+}
+
 /*
 1. Trim extra spaces
 2. split the price based by dot(.)
@@ -88,6 +100,7 @@ func ValidatePrice(priceStr string) (uint64, error) {
 
 	if len(prices) == 2 {
 		// check size of paisa part for edge cases like 11.001 or 11.011
+		// we want upto 2 digits of paisa in INR price
 		if len(prices[1]) > 2 {
 			return 0, fmt.Errorf("invalid price, please provide price in valid format")
 		}
@@ -98,7 +111,8 @@ func ValidatePrice(priceStr string) (uint64, error) {
 
 		// append 0 if paisa part has only one digit
 		// e.g INR 99.2 => Convert it to 9900 + 20 = 9920
-		if paisa < 10 {
+		// convert 99.09 into 9900
+		if len(prices[1]) == 1 {
 			paisa *= 10
 		}
 	}

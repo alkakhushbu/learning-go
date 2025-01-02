@@ -69,6 +69,30 @@ func (c *Conf) InsertProduct(ctx context.Context, newProduct NewProduct) (Produc
 	return product, nil
 }
 
+func (c *Conf) GetProductInfo(ctx context.Context, productId string) (ProductInfo, error) {
+	var productInfo ProductInfo
+	err := c.withTx(ctx, func(tx *sql.Tx) error {
+		query := `
+				SELECT p.id, p.stock, s.price_id FROM products p, product_pricing_stripe s
+				WHERE p.id = s.product_id AND p.id = $1;
+				`
+		err := tx.QueryRowContext(ctx, query, productId).Scan(&productInfo.Id, &productInfo.Stock, &productInfo.PriceId)
+
+		if err != nil {
+			// Return an error if the query execution or scan fails.
+			slog.Error("failed to query product info: %w", slog.String("Error", err.Error()))
+			return fmt.Errorf("failed to query product info: " + productId)
+		}
+
+		// If the query is successful, return nil to indicate no errors.
+		return nil
+	})
+	if err != nil {
+		return ProductInfo{}, err
+	}
+	return productInfo, nil
+}
+
 // withTx is a helper function that simplifies the usage of SQL transactions.
 // It begins a transaction using the provided context (`ctx`), executes the given function (`fn`),
 // and handles commit or rollback based on the success or failure of the function.

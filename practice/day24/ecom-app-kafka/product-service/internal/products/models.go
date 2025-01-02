@@ -35,3 +35,9 @@ type StripeProduct struct {
 	CreatedAt       time.Time `json:"created_at"` // Timestamp of creation
 	UpdatedAt       time.Time `json:"updated_at"` // Timestamp of last update
 }
+
+type ProductInfo struct {
+	Id      string `json:"product_id"`
+	Stock   uint   `json:"stock"`
+	PriceId string `json:"price_id"`
+}
