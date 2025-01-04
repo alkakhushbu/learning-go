@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"product-service/internal/auth"
 	"product-service/internal/products"
 	"product-service/middleware"
 
@@ -20,7 +21,7 @@ func NewHandler(conf *products.Conf) Handler {
 	return Handler{conf: conf, validate: validator.New()}
 }
 
-func API(conf *products.Conf) *gin.Engine {
+func API(conf *products.Conf, k *auth.Keys) *gin.Engine {
 	r := gin.Default()
 	mode := os.Getenv("GIN_MODE")
 	if mode == "release" {
@@ -32,14 +33,16 @@ func API(conf *products.Conf) *gin.Engine {
 	}
 
 	h := NewHandler(conf)
+	m := middleware.NewMid(k)
 
 	r.GET("/ping", healthCheck)
 	v1 := r.Group(prefix)
 	v1.Use(middleware.Logger())
 	{
-		v1.POST("/create", h.CreateProduct)
-		// v1.GET("/{productId}", h.GetProduct)
 		v1.GET("/stock/:productId", h.GetProductInfo)
+		v1.Use(m.Authentication())
+		v1.POST("/create", m.Authorize(h.CreateProduct, auth.RoleAdmin))
+		// v1.GET("/{productId}", h.GetProduct)
 	}
 
 	return r

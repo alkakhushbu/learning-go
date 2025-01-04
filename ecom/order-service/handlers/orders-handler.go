@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"order-service/internal/auth"
 	"order-service/internal/consul"
-	"order-service/internal/stores/kafka"
 	"order-service/pkg/ctxmanage"
 	"order-service/pkg/logkey"
 	"os"
@@ -212,26 +211,26 @@ func (h *Handler) Checkout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"checkout_session_id": sessionStripe.URL})
 
 	// Todo: change this
-	h.produceEvents(orderId, userId, productID)
+	// h.produceEvents(orderId, userId, productID)
 }
 
-func (h *Handler) produceEvents(orderId, userId, productId string) {
-	orderEvent := struct {
-		OrderId   string    `json:"order_id"` // UUID
-		ProductId string    `json:"product_id"`
-		Quantity  int       `json:"quantity"`
-		UserId    string    `json:"user_id"`
-		CreatedAt time.Time `json:"created_at"` // Timestamp of creation
-	}{OrderId: orderId, UserId: userId, ProductId: productId, Quantity: 1}
-	jsonData, _ := json.Marshal(orderEvent)
-	key := []byte(orderId)
-	err := h.kafkaConf.ProduceMessage(kafka.TopicOrderPaid, key, jsonData)
-	if err != nil {
-		slog.Error("Failed to produce message", slog.Any("error", err.Error()))
-		return
-	}
-	slog.Info("Message produced", slog.Any("data", string(jsonData)))
-}
+// func (h *Handler) produceEvents(orderId, userId, productId string) {
+// 	orderEvent := struct {
+// 		OrderId   string    `json:"order_id"` // UUID
+// 		ProductId string    `json:"product_id"`
+// 		Quantity  int       `json:"quantity"`
+// 		UserId    string    `json:"user_id"`
+// 		CreatedAt time.Time `json:"created_at"` // Timestamp of creation
+// 	}{OrderId: orderId, UserId: userId, ProductId: productId, Quantity: 1}
+// 	jsonData, _ := json.Marshal(orderEvent)
+// 	key := []byte(orderId)
+// 	err := h.kafkaConf.ProduceMessage(kafka.TopicOrderPaid, key, jsonData)
+// 	if err != nil {
+// 		slog.Error("Failed to produce message", slog.Any("error", err.Error()))
+// 		return
+// 	}
+// 	slog.Info("Message produced", slog.Any("data", string(jsonData)))
+// }
 
 /*
 *

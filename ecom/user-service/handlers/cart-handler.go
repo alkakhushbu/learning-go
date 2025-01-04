@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -18,7 +19,7 @@ const (
 	CLOSED = "CLOSED"
 )
 
-func (h *Handler) CreateOrUpdateCart(c *gin.Context) {
+func (h *Handler) AddToCart(c *gin.Context) {
 	traceId := ctxmanage.GetTraceIdOfRequest(c)
 
 	//get auth claims from the context
@@ -34,10 +35,18 @@ func (h *Handler) CreateOrUpdateCart(c *gin.Context) {
 	userId := claims.Subject
 	var newCartItem carts.NewCartItem
 	if err := c.ShouldBindJSON(&newCartItem); err != nil {
+		slog.Error("Invalid cart request payload", slog.Any("Error", err.Error()))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid cart request payload"})
 		return
 	}
 
+	//validate cartItem
+	err = h.validate.Struct(newCartItem)
+	if err != nil {
+		slog.Error("Invalid format of cart request payload", slog.Any("Error", err.Error()))
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid format of cart request payload"})
+		return
+	}
 	ctx := c.Request.Context()
 
 	type ProductServiceResponse struct {
@@ -83,7 +92,8 @@ func (h *Handler) CreateOrUpdateCart(c *gin.Context) {
 
 	// comare the stock of product with the quantity in cart request
 	productStock := <-productChan
-	if newCartItem.Quantity > productStock.Stock {
+	stock := productStock.Stock
+	if newCartItem.Quantity > stock {
 		slog.Error("Not enough products in stock")
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "Not enough products in stock"})
 		return
@@ -102,8 +112,13 @@ func (h *Handler) CreateOrUpdateCart(c *gin.Context) {
 	}
 
 	//add items to the cart
-	err = h.c.AddItemsToCart(ctx, cart.ID, newCartItem)
+	err = h.c.AddItemsToCart(ctx, cart.ID, newCartItem, stock)
 	if err != nil {
+		if errors.Is(err, carts.ErrNotEnoughStock) {
+			slog.Info(carts.ErrNotEnoughStock.Error())
+			c.JSON(http.StatusOK, gin.H{"message": carts.ErrNotEnoughStock.Error()})
+			return
+		}
 		slog.Error("Error in adding items to cart", slog.Any("Error", err.Error()))
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "error in adding items to cart"})
 		return
@@ -111,4 +126,59 @@ func (h *Handler) CreateOrUpdateCart(c *gin.Context) {
 
 	slog.Info("Cart added:", slog.Any("Cart", cart))
 	c.JSON(http.StatusOK, gin.H{"message": "Items added successfully"})
+}
+
+func (h *Handler) RemoveFromCart(c *gin.Context) {
+	traceId := ctxmanage.GetTraceIdOfRequest(c)
+
+	//get auth claims from the context
+	claims, err := ctxmanage.GetAuthClaimsFromContext(c.Request.Context())
+	if err != nil {
+		slog.Error(
+			"missing claims",
+			slog.String(logkey.TraceID, traceId), slog.Any(logkey.ERROR, err.Error()))
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorised request"})
+		return
+	}
+
+	userId := claims.Subject
+	var newCartItem carts.NewCartItem
+	if err := c.ShouldBindJSON(&newCartItem); err != nil {
+		slog.Error("Invalid cart request payload", slog.Any("Error", err.Error()))
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid cart request payload"})
+		return
+	}
+
+	//validate cartItem
+	err = h.validate.Struct(newCartItem)
+	if err != nil {
+		slog.Error("Invalid format of cart request payload", slog.Any("Error", err.Error()))
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid format of cart request payload"})
+		return
+	}
+	ctx := c.Request.Context()
+
+	//Get Cart for the user
+	cart, err := h.c.GetCart(ctx, userId)
+	if err != nil {
+		slog.Error("Cart does not exist for the user", slog.Any("Error", err.Error()))
+		c.AbortWithStatusJSON(http.StatusInternalServerError,
+			gin.H{"error": "error in removing items from cart"})
+		return
+	}
+
+	//remove items from the cart
+	err = h.c.RemoveItemsFromCart(ctx, cart.ID, newCartItem)
+	if err != nil {
+		if errors.Is(err, carts.ErrItemNotInCart) {
+			c.JSON(http.StatusOK, gin.H{"error": carts.ErrItemNotInCart.Error()})
+			return
+		}
+		slog.Error("Error in removing items from cart", slog.Any("Error", err.Error()))
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "error in removing items from cart"})
+		return
+	}
+
+	slog.Info("Items renoved:", slog.Any("Cart", cart))
+	c.JSON(http.StatusOK, gin.H{"message": "Items removed successfully"})
 }

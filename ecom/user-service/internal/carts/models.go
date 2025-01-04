@@ -4,7 +4,7 @@ import "time"
 
 type NewCartItem struct {
 	ProductID string `json:"product_id" validate:"required"`
-	Quantity  int    `json:"quantity" validate:"required,min=1,max=2"`
+	Quantity  int    `json:"quantity" validate:"required,min=1,max=1"`
 }
 
 type Cart struct {

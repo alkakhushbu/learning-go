@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"product-service/handlers"
+	"product-service/internal/auth"
 	"product-service/internal/consul"
 	"product-service/internal/products"
 	"product-service/internal/stores/kafka"
@@ -16,6 +17,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/golang-jwt/jwt"
 	"github.com/joho/godotenv"
 )
 
@@ -57,6 +59,28 @@ func startApp() error {
 	if err != nil {
 		return err
 	}
+
+	/*
+		//------------------------------------------------------//
+		//  Setting up Auth layer
+		//------------------------------------------------------//
+	*/
+
+	slog.Info("main : Started : Initializing authentication support")
+	publicPEM, err := os.ReadFile("public.pem")
+	if err != nil {
+		return fmt.Errorf("reading auth public key %w", err)
+	}
+
+	publicKey, err := jwt.ParseRSAPublicKeyFromPEM(publicPEM)
+	if err != nil {
+		return fmt.Errorf("parsing auth public key %w", err)
+	}
+
+	k, err := auth.NewKeys(publicKey)
+	if err != nil {
+		return fmt.Errorf("initializing auth %w", err)
+	}
 	/*
 
 			//------------------------------------------------------//
@@ -74,7 +98,7 @@ func startApp() error {
 		WriteTimeout: 800 * time.Second,
 		IdleTimeout:  800 * time.Second,
 		//handlers.API returns gin.Engine which implements Handler Interface
-		Handler: handlers.API(p),
+		Handler: handlers.API(p, k),
 	}
 	serverErrors := make(chan error)
 	go func() {
@@ -93,6 +117,7 @@ func startApp() error {
 		slog.Error("Error found", slog.Any("Error", err.Error()))
 		return err
 	}
+
 	/*
 		/*
 			//------------------------------------------------------//
