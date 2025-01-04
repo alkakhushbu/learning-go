@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS carts (
+    id VARCHAR(255) PRIMARY KEY,
+    user_id VARCHAR(255) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    status VARCHAR(10) NOT NULL DEFAULT 'OPEN' CHECK (status IN ('OPEN', 'CLOSED')),
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS cart_items (
+    id VARCHAR(255) PRIMARY KEY,
+    product_id VARCHAR(255) NOT NULL,
+    quantity INT NOT NULL,
+    cart_id VARCHAR(255) NOT NULL,
+    
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+    FOREIGN KEY (cart_id) REFERENCES carts(id)
+);

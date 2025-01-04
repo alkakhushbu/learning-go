@@ -154,7 +154,7 @@ services:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://localhost:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-order-service:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-order-service.alka:9092
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
@@ -182,6 +182,7 @@ services:
       DYNAMIC_CONFIG_ENABLED: 'true'
     networks:
       - web
+      
 
 #Containers connected to the same bridge network can communicate with each other
 networks:

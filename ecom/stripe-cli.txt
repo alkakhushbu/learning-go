@@ -6,7 +6,20 @@ Extract the zip .exe file
 Set environment variable by moving the .exe file to the location "go env GOPATH"
 move the .exe file to bin folder to the location "go env GOPATH" 
  
-Set up a local listener https://dashboard.stripe.com/test/workbench/webhooks
+Test with a local listener https://dashboard.stripe.com/test/workbench/webhooks
     stripe login --api-key <api-key>
     stripe listen --forward-to localhost/orders/webhook
     stripe trigger payment_intent.succeeded
+
+
+Add destination
+    Register webhook API here
+    <Select charge.updated,payment_intent.created,payment_intent.succeeded,charge.succeeded etc. checkboxes>
+    Select webhook endpoint option
+    Endpoint URL: http://localhost/orders/webhook
+
+
+
+Card number: 4242 4242 4242 4242
+
+

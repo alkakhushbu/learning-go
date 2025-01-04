@@ -94,7 +94,7 @@ func NewConf(topic, ConsumerGroup string) (*Conf, error) {
 	}
 
 	// Return the initialized configuration, which includes both producer and consumer clients.
-	slog.Info("Kafka setup successful**************", client, consumer)
+	slog.Info("Kafka setup successful**************")
 	return &Conf{
 		client:   client,   // Kafka producer client.
 		consumer: consumer, // Kafka consumer client.

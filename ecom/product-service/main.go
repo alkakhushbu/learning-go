@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"product-service/handlers"
 	"product-service/internal/consul"
 	"product-service/internal/products"
+	"product-service/internal/stores/kafka"
 	"product-service/internal/stores/postgres"
 	"syscall"
 	"time"
@@ -79,7 +81,6 @@ func startApp() error {
 		serverErrors <- api.ListenAndServe()
 	}()
 
-	
 	/*
 			//------------------------------------------------------//
 		               Registering with Consul
@@ -92,6 +93,33 @@ func startApp() error {
 		slog.Error("Error found", slog.Any("Error", err.Error()))
 		return err
 	}
+	/*
+		/*
+			//------------------------------------------------------//
+			//   Consuming Kafka TOPICS [ORDER SERVICE EVENTS]
+			//------------------------------------------------------//
+	*/
+	go func() {
+		ch := make(chan kafka.ConsumeResult)
+		go kafka.ConsumeMessage(context.Background(), kafka.TopicOrderPaid, kafka.ConsumerGroup, ch)
+		for v := range ch {
+			if v.Err != nil {
+				fmt.Println(v.Err)
+				continue
+			}
+			fmt.Printf("Consumed message: %s\n", string(v.Record.Value))
+			var event kafka.OrderPaidEvent
+			json.Unmarshal(v.Record.Value, &event)
+			// create a method over internal/products to decrement the stock value by quantity
+			err := p.DecrementStock(context.Background(), event.ProductId, event.Quantity)
+			if err != nil {
+				slog.Error("error decrementing the stock", slog.Any("error", err.Error()))
+				continue
+			}
+			slog.Info("product sold successfully and decremented the stock")
+
+		}
+	}()
 
 	/*
 			//------------------------------------------------------//

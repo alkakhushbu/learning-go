@@ -1,0 +1,49 @@
+https://github.com/pressly/goose
+
+# 1. Install goose <go install github.com/pressly/goose/v3/cmd/goose@latest>
+# 2. go to the migrations folder in terminal <cd \user-service\internal\stores\postgres\migrations>
+# 3. execute the command <goose create create_table_stripe_users sql> to create migrations
+# 4. Replace the version with 00002. File name would be <00002_create_table_stripe_users.sql>
+# 4. replace sql up and sql down queries with the actual queries
+
+
+$ goose create create_table_products sql
+$ Created new file: 20241230043102_create_table_products.sql
+
+$ goose -s create create_table_product_pricing_stripe sql
+$ Created new file: 00001_product_pricing_stripe.sql
+
+
+-- +goose Up
+-- +goose StatementBegin
+
+CREATE TABLE IF NOT EXISTS products (
+    id UUID PRIMARY KEY, -- Unique identifier for the product
+    name TEXT NOT NULL, -- Name of the product (up to 255 characters)
+    description TEXT, -- Detailed description of the product
+    price TEXT NOT NULL,
+    category TEXT,
+    stock INTEGER NOT NULL CHECK (stock >= 0), -- Stock level, must be non-negative
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS product_pricing_stripe  (
+    id SERIAL PRIMARY KEY, -- Unique identifier for the record
+    product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE, -- Foreign key referencing products table
+    stripe_product_id TEXT NOT NULL UNIQUE , -- Stripe product ID
+    price_id TEXT NOT NULL UNIQUE, -- Stripe price ID
+    price BIGINT NOT NULL CHECK (price >= 0), -- must be non-negative
+    created_at TIMESTAMP, -- Timestamp when the record was created
+    updated_at TIMESTAMP -- Timestamp when the record was last updated
+);
+-- +goose StatementEnd
+
+-- +goose Down
+-- +goose StatementBegin
+DROP TABLE IF EXISTS products;
+DROP TABLE IF EXISTS product_pricing;
+
+-- +goose StatementEnd
+Collapse
+has context menu

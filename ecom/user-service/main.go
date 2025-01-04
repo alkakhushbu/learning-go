@@ -12,6 +12,7 @@ import (
 	"time"
 	"user-service/handlers"
 	"user-service/internal/auth"
+	"user-service/internal/carts"
 	"user-service/internal/consul"
 	"user-service/internal/stores/kafka"
 	"user-service/internal/stores/postgres"
@@ -94,6 +95,15 @@ func startApp() error {
 	if err != nil {
 		return err
 	}
+	/*
+		//------------------------------------------------------//
+		//    Setting up carts package config
+		//------------------------------------------------------//
+	*/
+	c, err := carts.NewConf(db)
+	if err != nil {
+		return err
+	}
 	//------------------------------------------------------//
 
 	/*
@@ -154,6 +164,19 @@ func startApp() error {
 	}()
 
 	/*
+			//------------------------------------------------------//
+		               Registering with Consul
+			//------------------------------------------------------//
+	*/
+
+	consulClient, regId, err := consul.RegisterWithConsul()
+	defer consulClient.Agent().ServiceDeregister(regId)
+	if err != nil {
+		slog.Error("Error found", slog.Any("Error", err.Error()))
+		return err
+	}
+
+	/*
 
 			//------------------------------------------------------//
 		                Setting up http Server
@@ -170,25 +193,12 @@ func startApp() error {
 		WriteTimeout: 800 * time.Second,
 		IdleTimeout:  800 * time.Second,
 		//handlers.API returns gin.Engine which implements Handler Interface
-		Handler: handlers.API(u, kafkaConf, a),
+		Handler: handlers.API(u, kafkaConf, a, c, consulClient),
 	}
 	serverErrors := make(chan error)
 	go func() {
 		serverErrors <- api.ListenAndServe()
 	}()
-
-	/*
-			//------------------------------------------------------//
-		               Registering with Consul
-			//------------------------------------------------------//
-	*/
-
-	consulClient, regId, err := consul.RegisterWithConsul()
-	defer consulClient.Agent().ServiceDeregister(regId)
-	if err != nil {
-		slog.Error("Error found", slog.Any("Error", err.Error()))
-		return err
-	}
 
 	/*
 			//------------------------------------------------------//

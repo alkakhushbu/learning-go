@@ -100,3 +100,4 @@ func (c *Conf) CreateProductStripe(ctx context.Context, amount uint64, productId
 	// Step 17: If everything succeeds, return `nil`
 	return nil
 }
+
