@@ -49,13 +49,8 @@ func (h *Handler) AddToCart(c *gin.Context) {
 	}
 	ctx := c.Request.Context()
 
-	type ProductServiceResponse struct {
-		ProductID string `json:"product_id"`
-		Stock     int    `json:"stock"`
-		PriceID   string `json:"price_id"`
-	}
 	// Create channels for product-service goroutine results
-	productChan := make(chan ProductServiceResponse, 1) // For stock and price information
+	productChan := make(chan carts.ProductServiceResponse, 1) // For stock and price information
 
 	// call product-service endpoint here
 	go func() {
@@ -64,27 +59,27 @@ func (h *Handler) AddToCart(c *gin.Context) {
 		if err != nil {
 			slog.Error("service unavailable", slog.String(logkey.TraceID, traceId),
 				slog.String(logkey.ERROR, err.Error()))
-			productChan <- ProductServiceResponse{}
+			productChan <- carts.ProductServiceResponse{}
 			return
 		}
 		httpQuery := fmt.Sprintf("http://%s:%d/products/stock/%s", address, port, newCartItem.ProductID)
 		resp, err := http.Get(httpQuery)
 		if err != nil {
 			slog.Error("error fetching product service", slog.String(logkey.TraceID, traceId))
-			productChan <- ProductServiceResponse{}
+			productChan <- carts.ProductServiceResponse{}
 			return
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != http.StatusOK {
 			slog.Error("error fetching product information", slog.String(logkey.TraceID, traceId))
-			productChan <- ProductServiceResponse{}
+			productChan <- carts.ProductServiceResponse{}
 			return
 		}
-		var productServiceResponse ProductServiceResponse
+		var productServiceResponse carts.ProductServiceResponse
 		err = json.NewDecoder(resp.Body).Decode(&productServiceResponse)
 		if err != nil {
 			slog.Error("error binding json", slog.String(logkey.TraceID, traceId), slog.Any(logkey.ERROR, err.Error()))
-			productChan <- ProductServiceResponse{}
+			productChan <- carts.ProductServiceResponse{}
 			return
 		}
 		productChan <- productServiceResponse
@@ -93,6 +88,7 @@ func (h *Handler) AddToCart(c *gin.Context) {
 	// comare the stock of product with the quantity in cart request
 	productStock := <-productChan
 	stock := productStock.Stock
+	// priceId := productStock.PriceID
 	if newCartItem.Quantity > stock {
 		slog.Error("Not enough products in stock")
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "Not enough products in stock"})
@@ -112,7 +108,7 @@ func (h *Handler) AddToCart(c *gin.Context) {
 	}
 
 	//add items to the cart
-	err = h.c.AddItemsToCart(ctx, cart.ID, newCartItem, stock)
+	err = h.c.AddItemsToCart(ctx, cart.ID, newCartItem, productStock)
 	if err != nil {
 		if errors.Is(err, carts.ErrNotEnoughStock) {
 			slog.Info(carts.ErrNotEnoughStock.Error())
@@ -181,4 +177,31 @@ func (h *Handler) RemoveFromCart(c *gin.Context) {
 
 	slog.Info("Items renoved:", slog.Any("Cart", cart))
 	c.JSON(http.StatusOK, gin.H{"message": "Items removed successfully"})
+}
+
+func (h *Handler) GetAllCartItems(c *gin.Context) {
+	traceId := ctxmanage.GetTraceIdOfRequest(c)
+
+	//get auth claims from the context
+	claims, err := ctxmanage.GetAuthClaimsFromContext(c.Request.Context())
+	if err != nil {
+		slog.Error(
+			"missing claims",
+			slog.String(logkey.TraceID, traceId), slog.Any(logkey.ERROR, err.Error()))
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorised request"})
+		return
+	}
+
+	userId := claims.Subject
+	ctx := c.Request.Context()
+	cartResponse, err := h.c.GetAllCartItems(ctx, userId)
+	if err != nil {
+		if errors.Is(err, carts.ErrEmptyCart) {
+			c.JSON(http.StatusNoContent, gin.H{"message": err.Error()})
+			return
+		}
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"Error": "Error in fetching cart items"})
+		return
+	}
+	c.JSON(http.StatusOK, cartResponse)
 }

@@ -1,0 +1,6 @@
+Unimplemented code 12
+
+
+Solution: execute "go run ." 
+since there are multiple main files
+so "go run setup.go" won't work

@@ -299,3 +299,45 @@ func (c *Conf) GetProductStockAndStripePriceId(ctx context.Context, productID st
 	// Return the stock and priceID
 	return stock, priceID, nil
 }
+
+func (c *Conf) DecrementStock(ctx context.Context, productID string, quantity int) error {
+	// Decrement stock directly in the database
+	err := c.withTx(ctx, func(tx *sql.Tx) error {
+		// SQL query to decrement stock atomically
+		query := `
+		UPDATE products
+		SET stock = stock - $1, updated_at = $2
+		WHERE id = $3 AND stock > 0
+		`
+
+		updatedAt := time.Now().UTC() // Current timestamp
+
+		// Execute the query
+		result, err := tx.ExecContext(ctx, query, quantity, updatedAt, productID)
+		if err != nil {
+			return fmt.Errorf("failed to decrement stock: %w", err)
+		}
+
+		// Check if any rows were affected
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			return fmt.Errorf("failed to check rows affected: %w", err)
+		}
+
+		if rowsAffected == 0 {
+			return fmt.Errorf("failed to decrement stock")
+		}
+
+		// Successfully decremented stock
+		return nil
+	})
+
+	// Handle errors
+	if err != nil {
+		return err
+	}
+
+	// Successfully completed
+	return nil
+
+}

@@ -40,4 +40,5 @@ type ProductInfo struct {
 	Id      string `json:"product_id"`
 	Stock   uint   `json:"stock"`
 	PriceId string `json:"price_id"`
+	Price   int    `json:"price"`
 }

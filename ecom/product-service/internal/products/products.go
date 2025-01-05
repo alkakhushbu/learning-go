@@ -73,10 +73,11 @@ func (c *Conf) GetProductInfo(ctx context.Context, productId string) (ProductInf
 	var productInfo ProductInfo
 	err := c.withTx(ctx, func(tx *sql.Tx) error {
 		query := `
-				SELECT p.id, p.stock, s.price_id FROM products p, product_pricing_stripe s
+				SELECT p.id, p.stock, s.price_id, s.price FROM products p, product_pricing_stripe s
 				WHERE p.id = s.product_id AND p.id = $1;
 				`
-		err := tx.QueryRowContext(ctx, query, productId).Scan(&productInfo.Id, &productInfo.Stock, &productInfo.PriceId)
+		err := tx.QueryRowContext(ctx, query, productId).
+			Scan(&productInfo.Id, &productInfo.Stock, &productInfo.PriceId, &productInfo.Price)
 
 		if err != nil {
 			// Return an error if the query execution or scan fails.

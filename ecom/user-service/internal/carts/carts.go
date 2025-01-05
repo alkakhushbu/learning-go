@@ -18,6 +18,7 @@ const (
 
 var ErrNotEnoughStock = errors.New("not enough products in stock")
 var ErrItemNotInCart = errors.New("item not in cart")
+var ErrEmptyCart = errors.New("Cart is empty")
 
 type Conf struct {
 	db *sql.DB
@@ -77,13 +78,14 @@ func (c *Conf) InsertCart(ctx context.Context, userId string) (Cart, error) {
 	return cart, nil
 }
 
-func (c *Conf) AddItemsToCart(ctx context.Context, cartId string, newItems NewCartItem, stock int) error {
+func (c *Conf) AddItemsToCart(ctx context.Context, cartId string, newItems NewCartItem, product ProductServiceResponse) error {
 	selectQuery := `SELECT id, product_id, quantity, cart_id, created_at, updated_at
 					FROM cart_items
 					WHERE cart_id = $1 AND product_id = $2`
 	updateQuery := `
-				INSERT INTO cart_items (id, product_id, quantity, cart_id, created_at, updated_at)
-				VALUES ($1, $2, $3, $4, $5, $6)
+				INSERT INTO cart_items 
+				(id, product_id, quantity, cart_id, created_at, updated_at, price_id, price)
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 				ON CONFLICT (product_id, cart_id)
 				DO UPDATE SET quantity = cart_items.quantity + $3
 				RETURNING id, product_id, quantity, cart_id, created_at, updated_at;
@@ -103,12 +105,12 @@ func (c *Conf) AddItemsToCart(ctx context.Context, cartId string, newItems NewCa
 			return err
 		}
 		//check final quantity in cart. it must not be greater than the available stock
-		if err == nil && cartItem.Quantity+newItems.Quantity > stock {
+		if err == nil && cartItem.Quantity+newItems.Quantity > product.Stock {
 			slog.Error(ErrNotEnoughStock.Error())
 			return ErrNotEnoughStock
 		}
 		err = tx.QueryRowContext(ctx, updateQuery,
-			id, newItems.ProductID, newItems.Quantity, cartId, createdAt, updatedAt).
+			id, newItems.ProductID, newItems.Quantity, cartId, createdAt, updatedAt, product.PriceID, product.Price).
 			Scan(&cartItem.ID, &cartItem.ProductID, &cartItem.Quantity,
 				&cartItem.CartID, &cartItem.CreatedAt, &cartItem.UpdatedAt)
 
@@ -177,7 +179,57 @@ func (c *Conf) RemoveItemsFromCart(ctx context.Context, cartId string, newItems 
 		return err
 	}
 	return nil
+}
 
+func (c *Conf) GetAllCartItems(ctx context.Context, userId string) (CartResponse, error) {
+	// get cartId query
+	cartIdQuery := `
+					SELECT id
+					FROM carts 
+					WHERE user_id = $1 AND status = $2;`
+	// get cartItems query
+	cartItemsQuery := `SELECT id, product_id, quantity, price
+					FROM cart_items
+					WHERE cart_id = $1`
+	var cartId string
+	var cartItems []CartItemResponse
+	err := c.withTx(ctx, func(tx *sql.Tx) error {
+		err := tx.QueryRowContext(ctx, cartIdQuery, userId, OPEN).
+			Scan(&cartId)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				slog.Error("Empty cart for user", slog.Any("Error", err.Error()))
+				return ErrEmptyCart
+			}
+			slog.Error("Error in getting cart details", slog.Any("Error", err.Error()))
+			return err
+		}
+		rows, err := tx.QueryContext(ctx, cartItemsQuery, cartId)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var price int
+			var item CartItemResponse
+			if err := rows.Scan(&item.ID, &item.ProductID, &item.Quantity, &price); err != nil {
+				return err
+			}
+			//convert price into float string
+			item.Price = fmt.Sprintf("%.2f", float64(price)/100)
+			cartItems = append(cartItems, item)
+		}
+
+		if err := rows.Err(); err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return CartResponse{}, err
+	}
+	cartResponse := CartResponse{CartID: cartId, CartItems: cartItems}
+	return cartResponse, nil
 }
 
 // withTx is a helper function that simplifies the usage of SQL transactions.

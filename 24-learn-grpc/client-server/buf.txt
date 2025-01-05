@@ -1,0 +1,33 @@
+install buf https://buf.build/docs/installation/
+server directory -> 
+	buf config init
+	buf lint
+client directory -> buf config init
+
+
+Notes:
+NewUser : create in internal
+
+func SignUp: create in handlers
+
+grpc.NewServer("tcp") => use service discovery instead of this
+e.g. grpc.NewService("user-service.alka:5001", dialOpts...)
+expose both ports for the same service in docker compose
+
+
+=======================================================
+				buf commands					
+=======================================================
+## Configure the workspace, creates buf.yaml file in root directory 
+buf config init 
+
+## verify that everything is set up properly
+buf build
+
+## Configure a buf.gen.yaml file manually
+
+## linting the current project
+buf lint
+
+## generate the Connect RPC
+buf generate

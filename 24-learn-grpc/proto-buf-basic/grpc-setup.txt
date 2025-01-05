@@ -1,0 +1,15 @@
+install buf
+server directory -> 
+	buf config init
+	buf lint
+client directory -> buf config init
+
+
+Notes:
+NewUser : create in internal
+
+func SignUp: create in handlers
+
+grpc.NewServer("tcp") => use service discovery instead of this
+e.g. grpc.NewService("user-service.alka:5001", dialOpts...)
+expose both ports for the same service in docker compose

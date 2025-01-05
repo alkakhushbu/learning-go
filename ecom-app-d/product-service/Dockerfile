@@ -45,6 +45,7 @@ COPY --from=builder /app/internal/stores/postgres/migrations ./internal/stores/p
 
 # Copy the .env file into the container
 COPY .env .
+COPY pubkey.pem .
 
 
 EXPOSE 80

@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"github.com/golang-jwt/jwt/v5"
+	"product-service/internal/auth"
 	"product-service/internal/consul"
 	"product-service/internal/stores/kafka"
 
@@ -61,6 +63,28 @@ func startApp() error {
 	}
 
 	/*
+		//------------------------------------------------------//
+		//  Setting up Auth layer
+		//------------------------------------------------------//
+	*/
+
+	slog.Info("main : Started : Initializing authentication support")
+	publicPEM, err := os.ReadFile("pubkey.pem")
+	if err != nil {
+		return fmt.Errorf("reading auth public key %w", err)
+	}
+
+	publicKey, err := jwt.ParseRSAPublicKeyFromPEM(publicPEM)
+	if err != nil {
+		return fmt.Errorf("parsing auth public key %w", err)
+	}
+
+	k, err := auth.NewKeys(publicKey)
+	if err != nil {
+		return fmt.Errorf("initializing auth %w", err)
+	}
+
+	/*
 		/*
 			//------------------------------------------------------//
 			//   Consuming Kafka TOPICS [ORDER SERVICE EVENTS]
@@ -78,8 +102,12 @@ func startApp() error {
 			var event kafka.OrderPaidEvent
 			json.Unmarshal(v.Record.Value, &event)
 			// create a method over internal/products to decrement the stock value by quantity
-			fmt.Println("decrement the stock of the product")
-			fmt.Println("successfully decremented the stock of the product")
+			err := p.DecrementStock(context.Background(), event.ProductId, event.Quantity)
+			if err != nil {
+				slog.Error("error decrementing the stock", slog.Any("error", err.Error()))
+				continue
+			}
+			slog.Info("product sold successfully and decremented the stock")
 
 		}
 	}()
@@ -104,7 +132,7 @@ func startApp() error {
 		WriteTimeout: 800 * time.Second,
 		IdleTimeout:  800 * time.Second,
 		//handlers.API returns gin.Engine which implements Handler Interface
-		Handler: handlers.API(p, prefix),
+		Handler: handlers.API(p, prefix, k),
 	}
 
 	// channel to store any errors while setting up the service

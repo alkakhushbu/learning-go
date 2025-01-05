@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option go_package = 'proto-buf-basic/proto';
+
+// field tag must be unique within a message
+//PascalCase, such as "BlogRequest"
+message BlogRequest {
+  int64 blog_id = 1; // dataType name = field tag   //  lower_snake_case for the fieldName
+  string name = 2;
+  string title = 3;
+  string content = 4;
+}
+
+
+// create a message user and book
+// add user message into book

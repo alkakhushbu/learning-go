@@ -65,6 +65,8 @@ func API(u *users.Conf, k *kafka.Conf, a *auth.Keys, c *carts.Conf, client *cons
 		v1.GET("/stripe", h.GetStripeDetails)
 		v1.POST("/carts/add", h.AddToCart)
 		v1.POST("/carts/remove", h.RemoveFromCart)
+		v1.GET("/carts", h.GetAllCartItems)
+		// v1.POST("/orders", h.GetOrderHistory)
 	}
 
 	return r
