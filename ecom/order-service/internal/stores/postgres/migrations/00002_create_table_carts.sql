@@ -5,8 +5,7 @@ CREATE TABLE IF NOT EXISTS carts (
     user_id UUID NOT NULL,
     status VARCHAR(10) NOT NULL DEFAULT 'OPEN' CHECK (status IN ('OPEN', 'CLOSED')),
     created_at TIMESTAMP,
-    updated_at TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    updated_at TIMESTAMP
 );
 -- +goose StatementEnd
 

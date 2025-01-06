@@ -33,7 +33,7 @@ func NewConf(db *sql.DB) (*Conf, error) {
 
 func (c *Conf) GetCart(ctx context.Context, userId string) (Cart, error) {
 	query := `
-					SELECT id, user_id, status , created_at, updated_at
+					SELECT id, user_id, status, created_at, updated_at
 					FROM carts 
 					WHERE user_id = $1 AND status = $2;`
 	var cart Cart
@@ -79,53 +79,54 @@ func (c *Conf) InsertCart(ctx context.Context, userId string) (Cart, error) {
 }
 
 func (c *Conf) AddItemsToCart(ctx context.Context, cartId string, newItems NewCartItem, product ProductServiceResponse) error {
-	selectQuery := `SELECT id, product_id, quantity, cart_id, created_at, updated_at
-					FROM cart_items
-					WHERE cart_id = $1 AND product_id = $2`
-	updateQuery := `
-				INSERT INTO cart_items 
-				(id, product_id, quantity, cart_id, created_at, updated_at, price_id, price)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-				ON CONFLICT (product_id, cart_id)
-				DO UPDATE SET quantity = cart_items.quantity + $3
-				RETURNING id, product_id, quantity, cart_id, created_at, updated_at;
-				`
-	var cartItem CartItem
-	id := uuid.NewString()
-	createdAt := time.Now().UTC()
-	updatedAt := time.Now().UTC()
+    selectQuery := `SELECT id, product_id, quantity, cart_id, created_at, updated_at
+                    FROM cart_items
+                    WHERE cart_id = $1 AND product_id = $2`
+    updateQuery := `
+                INSERT INTO cart_items 
+                (id, product_id, quantity, cart_id, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6)
+                ON CONFLICT (product_id, cart_id)
+                DO UPDATE SET quantity = cart_items.quantity + $3
+                RETURNING id, product_id, quantity, cart_id, created_at, updated_at;
+                `
+    var cartItem CartItem
+    id := uuid.NewString()
+    createdAt := time.Now().UTC()
+    updatedAt := time.Now().UTC()
 
-	err := c.withTx(ctx, func(tx *sql.Tx) error {
-		// fmt.Println("cartId :", cartId, ".... ProductId", newItems.ProductID)
-		err := tx.QueryRowContext(ctx, selectQuery, cartId, newItems.ProductID).
-			Scan(&cartItem.ID, &cartItem.ProductID, &cartItem.Quantity,
-				&cartItem.CartID, &cartItem.CreatedAt, &cartItem.UpdatedAt)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
-			slog.Error(err.Error())
-			return err
-		}
-		//check final quantity in cart. it must not be greater than the available stock
-		if err == nil && cartItem.Quantity+newItems.Quantity > product.Stock {
-			slog.Error(ErrNotEnoughStock.Error())
-			return ErrNotEnoughStock
-		}
-		err = tx.QueryRowContext(ctx, updateQuery,
-			id, newItems.ProductID, newItems.Quantity, cartId, createdAt, updatedAt, product.PriceID, product.Price).
-			Scan(&cartItem.ID, &cartItem.ProductID, &cartItem.Quantity,
-				&cartItem.CartID, &cartItem.CreatedAt, &cartItem.UpdatedAt)
+    err := c.withTx(ctx, func(tx *sql.Tx) error {
+        // fmt.Println("cartId :", cartId, ".... ProductId", newItems.ProductID)
+        err := tx.QueryRowContext(ctx, selectQuery, cartId, newItems.ProductID).
+            Scan(&cartItem.ID, &cartItem.ProductID, &cartItem.Quantity,
+                &cartItem.CartID, &cartItem.CreatedAt, &cartItem.UpdatedAt)
+        if err != nil && !errors.Is(err, sql.ErrNoRows) {
+            slog.Error(err.Error())
+            return err
+        }
+        // Check final quantity in cart. It must not be greater than the available stock
+        if err == nil && cartItem.Quantity+newItems.Quantity > product.Stock {
+            slog.Error(ErrNotEnoughStock.Error())
+            return ErrNotEnoughStock
+        }
+        err = tx.QueryRowContext(ctx, updateQuery,
+            id, newItems.ProductID, newItems.Quantity, cartId, createdAt, updatedAt).
+            Scan(&cartItem.ID, &cartItem.ProductID, &cartItem.Quantity,
+                &cartItem.CartID, &cartItem.CreatedAt, &cartItem.UpdatedAt)
 
-		if err != nil {
-			slog.Error("Error in cart items creation", slog.Any("Error", err.Error()))
-			return err
-		}
-		return nil
-	})
+        if err != nil {
+            slog.Error("Error in cart items creation", slog.Any("Error", err.Error()))
+            return err
+        }
+        return nil
+    })
 
-	if err != nil {
-		return err
-	}
-	return nil
+    if err != nil {
+        return err
+    }
+    return nil
 }
+
 
 func (c *Conf) RemoveItemsFromCart(ctx context.Context, cartId string, newItems NewCartItem) error {
 	selectQuery := `SELECT id, product_id, quantity, cart_id, created_at, updated_at
@@ -265,3 +266,4 @@ func (c *Conf) withTx(ctx context.Context, fn func(*sql.Tx) error) error {
 	// Return nil if the function executes successfully and the transaction is committed.
 	return nil
 }
+

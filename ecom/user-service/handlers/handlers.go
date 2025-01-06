@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"user-service/internal/auth"
-	"user-service/internal/carts"
 	"user-service/internal/stores/kafka"
 	"user-service/internal/users"
 	"user-service/middleware"
@@ -20,31 +19,29 @@ type Handler struct {
 	validate *validator.Validate
 	k        *kafka.Conf
 	a        *auth.Keys
-	c        *carts.Conf
 	client   *consulapi.Client
 }
 
 func NewHandler(u *users.Conf, k *kafka.Conf, a *auth.Keys,
-	c *carts.Conf, client *consulapi.Client) *Handler {
+	client *consulapi.Client) *Handler {
 
 	return &Handler{
 		u:        u,
 		k:        k,
 		validate: validator.New(),
 		a:        a,
-		c:        c,
 		client:   client,
 	}
 }
 
-func API(u *users.Conf, k *kafka.Conf, a *auth.Keys, c *carts.Conf, client *consulapi.Client) *gin.Engine {
+func API(u *users.Conf, k *kafka.Conf, a *auth.Keys, client *consulapi.Client) *gin.Engine {
 	r := gin.New()
 	mode := os.Getenv("GIN_MODE")
 	if mode == "release" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	h := NewHandler(u, k, a, c, client)
+	h := NewHandler(u, k, a, client)
 
 	prefix := os.Getenv("SERVICE_ENDPOINT_PREFIX")
 	if prefix == "" {
@@ -63,9 +60,7 @@ func API(u *users.Conf, k *kafka.Conf, a *auth.Keys, c *carts.Conf, client *cons
 		v1.Use(middleware.Authentication(a))
 		v1.GET("/check", h.AuthCheck)
 		v1.GET("/stripe", h.GetStripeDetails)
-		v1.POST("/carts/add", h.AddToCart)
-		v1.POST("/carts/remove", h.RemoveFromCart)
-		v1.GET("/carts", h.GetAllCartItems)
+
 		// v1.POST("/orders", h.GetOrderHistory)
 	}
 

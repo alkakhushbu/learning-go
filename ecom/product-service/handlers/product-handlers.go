@@ -72,6 +72,34 @@ func (h *Handler) GetProductInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, productInfo)
 }
 
+func (h *Handler) GetProductInfos(c *gin.Context) {
+	var request struct {
+		ProductIds []string `json:"productIds"`
+	}
+
+	//validate Productinfo
+	err := h.validate.Struct(request)
+	if err != nil {
+		slog.Error("Invalid format of cart request payload", slog.Any("Error", err.Error()))
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid format of product request payload"})
+		return
+	}
+	if err := c.BindJSON(&request); err != nil {
+		slog.Error("Error in binding JSON payload", slog.String("error", err.Error()))
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid payload"})
+		return
+	}
+
+	productInfos, err := h.conf.GetProductInfos(c.Request.Context(), request.ProductIds)
+	if err != nil {
+		slog.Error("Error in fetching product Infos", slog.Any("productIds", request.ProductIds))
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Error in fetching product Infos"})
+		return
+	}
+
+	c.JSON(http.StatusOK, productInfos)
+}
+
 /*
 1. Trim extra spaces
 2. split the price based by dot(.)

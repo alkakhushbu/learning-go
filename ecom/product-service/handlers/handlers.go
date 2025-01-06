@@ -40,6 +40,7 @@ func API(conf *products.Conf, k *auth.Keys) *gin.Engine {
 	v1.Use(middleware.Logger())
 	{
 		v1.GET("/stock/:productId", h.GetProductInfo)
+		v1.POST("/stock", h.GetProductInfos)
 		v1.Use(m.Authentication())
 		v1.POST("/create", m.Authorize(h.CreateProduct, auth.RoleAdmin))
 		// v1.GET("/{productId}", h.GetProduct)

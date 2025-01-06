@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"user-service/internal/carts"
-	"user-service/internal/consul"
-	"user-service/pkg/ctxmanage"
-	"user-service/pkg/logkey"
+	"order-service/internal/carts"
+	"order-service/internal/consul"
+	"order-service/pkg/ctxmanage"
+	"order-service/pkg/logkey"
 
 	"github.com/gin-gonic/gin"
 )
@@ -99,6 +99,7 @@ func (h *Handler) AddToCart(c *gin.Context) {
 	cart, err := h.c.GetCart(ctx, userId)
 	if err != nil {
 		//create a new cart if cart does not exist
+		fmt.Println("Create a new cart")
 		cart, err = h.c.InsertCart(ctx, userId)
 		if err != nil {
 			slog.Error("Error in creating cart", slog.Any("Error", err.Error()))
@@ -107,7 +108,9 @@ func (h *Handler) AddToCart(c *gin.Context) {
 		}
 	}
 
+	fmt.Println("Got cart id from user")
 	//add items to the cart
+	fmt.Println("Add items to cart..............")
 	err = h.c.AddItemsToCart(ctx, cart.ID, newCartItem, productStock)
 	if err != nil {
 		if errors.Is(err, carts.ErrNotEnoughStock) {
@@ -197,9 +200,11 @@ func (h *Handler) GetAllCartItems(c *gin.Context) {
 	cartResponse, err := h.c.GetAllCartItems(ctx, userId)
 	if err != nil {
 		if errors.Is(err, carts.ErrEmptyCart) {
+			slog.Error("Error in fetching cart items", slog.Any("Error", err.Error()))
 			c.JSON(http.StatusNoContent, gin.H{"message": err.Error()})
 			return
 		}
+		slog.Error("Error in fetching cart items", slog.Any("Error", err.Error()))
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"Error": "Error in fetching cart items"})
 		return
 	}

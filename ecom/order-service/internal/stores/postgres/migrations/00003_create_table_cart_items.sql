@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS cart_items (
     
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
-    FOREIGN KEY (cart_id) REFERENCES carts(id)
+    FOREIGN KEY (cart_id) REFERENCES carts(id),
+    UNIQUE (product_id, cart_id)
 );
 -- +goose StatementEnd
 

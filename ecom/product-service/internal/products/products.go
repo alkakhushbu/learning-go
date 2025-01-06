@@ -94,6 +94,35 @@ func (c *Conf) GetProductInfo(ctx context.Context, productId string) (ProductInf
 	return productInfo, nil
 }
 
+func (c *Conf) GetProductInfos(ctx context.Context, productIds []string) ([]ProductInfo, error) {
+	var productInfos []ProductInfo
+	err := c.withTx(ctx, func(tx *sql.Tx) error {
+		query := `
+                SELECT p.id, p.stock, s.price_id, s.price FROM products p, product_pricing_stripe s
+                WHERE p.id = s.product_id AND p.id = $1;
+                `
+		for _, productId := range productIds {
+			var productInfo ProductInfo
+			err := tx.QueryRowContext(ctx, query, productId).
+				Scan(&productInfo.Id, &productInfo.Stock, &productInfo.PriceId, &productInfo.Price)
+
+			if err != nil {
+				// Return an error if the query execution or scan fails.
+				slog.Error("failed to query product info: %w", slog.String("Error", err.Error()))
+				return fmt.Errorf("failed to query product info: " + productId)
+			}
+
+			productInfos = append(productInfos, productInfo)
+		}
+		// If all queries are successful, return nil to indicate no errors.
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return productInfos, nil
+}
+
 func (c *Conf) DecrementStock(ctx context.Context, productId string, quantity int) error {
 	// Decrement stock directly in the database
 	err := c.withTx(ctx, func(tx *sql.Tx) error {

@@ -7,10 +7,11 @@ import (
 	"net/http"
 	"order-service/handlers"
 	"order-service/internal/auth"
+	"order-service/internal/carts"
 	"order-service/internal/consul"
 	"order-service/internal/orders"
 	"order-service/internal/stores/kafka"
-	postgres "order-service/internal/stores/postgres/migrations"
+	postgres "order-service/internal/stores/postgres"
 	"os"
 	"os/signal"
 	"syscall"
@@ -104,7 +105,15 @@ func startApp() error {
 		return err
 	}
 
-	defer consulClient.Agent().ServiceDeregister(regId)
+	defer consulClient.Agent().ServiceDeregister(regId) /*
+		//------------------------------------------------------//
+		//    Setting up carts package config
+		//------------------------------------------------------//
+	*/
+	c, err := carts.NewConf(db)
+	if err != nil {
+		return err
+	}
 
 	/*
 
@@ -128,7 +137,7 @@ func startApp() error {
 		WriteTimeout: 800 * time.Second,
 		IdleTimeout:  800 * time.Second,
 
-		Handler: handlers.API(prefix, a, consulClient, dbConf, kafkaConf),
+		Handler: handlers.API(prefix, a, consulClient, dbConf, kafkaConf, c),
 	}
 	serverErrors := make(chan error)
 	go func() {
