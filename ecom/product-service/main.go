@@ -136,12 +136,24 @@ func startApp() error {
 			var event kafka.OrderPaidEvent
 			json.Unmarshal(v.Record.Value, &event)
 			// create a method over internal/products to decrement the stock value by quantity
-			err := p.DecrementStock(context.Background(), event.ProductId, event.Quantity)
-			if err != nil {
-				slog.Error("error decrementing the stock", slog.Any("error", err.Error()))
-				continue
+			if event.ProductId != "" {
+				err := p.DecrementStock(context.Background(), event.ProductId, event.Quantity)
+				if err != nil {
+					slog.Error("error decrementing the stock", slog.Any("error", err.Error()))
+					continue
+				}
+				slog.Info("product sold successfully and decremented the stock")
+			} else {
+				for _, item := range event.CartItems {
+					err := p.DecrementStock(context.Background(), item.ProductID, item.Quantity)
+					if err != nil {
+						slog.Error("error decrementing the stock", slog.Any("error", err.Error()))
+						continue
+					}
+					slog.Info("product sold successfully and decremented the stock")
+				}
+				slog.Info("product sold successfully and decremented the stock for cart")
 			}
-			slog.Info("product sold successfully and decremented the stock")
 
 		}
 	}()

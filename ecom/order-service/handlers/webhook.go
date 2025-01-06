@@ -52,19 +52,44 @@ func (h *Handler) Webhook(c *gin.Context) {
 		productID := paymentIntent.Metadata["product_id"]
 		userID := paymentIntent.Metadata["user_id"]
 		slog.Info("Metadata received", slog.String(logkey.TraceID, traceId), slog.String("OrderID", orderId), slog.String("UserID", userID), slog.String("ProductID", productID))
+		if productID != "" {
+			go func() {
+				jsonData, err := json.Marshal(kafka.OrderPaidEvent{
+					OrderId:   orderId,
+					ProductId: productID,
+					Quantity:  1,
+					CreatedAt: time.Now().UTC(),
+				})
 
-		go func() {
+				if err != nil {
+					slog.Error("Failed to marshal JSON", slog.Any("error", err.Error()))
+					return
+				}
+				key := []byte(orderId)
+				err = h.kafkaConf.ProduceMessage(kafka.TopicOrderPaid, key, jsonData)
+				if err != nil {
+					slog.Error("Failed to produce message", slog.Any("error", err.Error()))
+					return
+				}
+				slog.Info("Message produced", slog.Any("data", string(jsonData)))
+			}()
+		} else {
+			// cartId := paymentIntent.Metadata["cart_id"]
+			cartItemsString := paymentIntent.Metadata["cart_items"]
+
+			var cartItems []kafka.CartItem
+			err := json.Unmarshal([]byte(cartItemsString), &cartItems)
+			if err != nil {
+				slog.Error("Error in marshaling cartItems", slog.Any("error", err.Error()))
+			}
+
 			jsonData, err := json.Marshal(kafka.OrderPaidEvent{
 				OrderId:   orderId,
 				ProductId: productID,
+				CartItems: cartItems,
 				Quantity:  1,
 				CreatedAt: time.Now().UTC(),
 			})
-
-			if err != nil {
-				slog.Error("Failed to marshal JSON", slog.Any("error", err.Error()))
-				return
-			}
 			key := []byte(orderId)
 			err = h.kafkaConf.ProduceMessage(kafka.TopicOrderPaid, key, jsonData)
 			if err != nil {
@@ -72,7 +97,7 @@ func (h *Handler) Webhook(c *gin.Context) {
 				return
 			}
 			slog.Info("Message produced", slog.Any("data", string(jsonData)))
-		}()
+		}
 		ctx := c.Request.Context()
 		err = h.dbConf.UpdateOrder(ctx, orderId, orders.StatusPaid, paymentIntent.ID)
 		if err != nil {

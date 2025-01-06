@@ -421,7 +421,7 @@ func (h *Handler) CartCheckout(c *gin.Context) {
 
 	//c.JSON(http.StatusOK, gin.H{"customerId": userServiceResponse.StripCustomerId, "price_id": priceID, "stock": stock})
 
-	cartItemJson, err := json.Marshal(cartItems)
+	cartItemsJson, err := json.Marshal(cartItems.CartItems)
 	if err != nil {
 		slog.Error("Error in marshaling cartItems", slog.Any("Error", err.Error()))
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Error in marshaling cartItems"})
@@ -455,7 +455,7 @@ func (h *Handler) CartCheckout(c *gin.Context) {
 				"user_id":    claims.Subject, // userID in jwt token
 				"product_id": productID,
 				"cart_id":    cartItems.CartID,
-				"cart_items": string(cartItemJson),
+				"cart_items": string(cartItemsJson),
 			},
 		},
 	}
