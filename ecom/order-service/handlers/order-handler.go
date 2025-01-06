@@ -22,7 +22,6 @@ import (
 )
 
 func (h *Handler) ProductCheckout(c *gin.Context) {
-	//TODO: Add the order in the orders table, and mark that as pending
 
 	// Get the traceId from the request for tracking logs
 	traceId := ctxmanage.GetTraceIdOfRequest(c)
@@ -193,7 +192,7 @@ func (h *Handler) ProductCheckout(c *gin.Context) {
 	sessionStripe, err := session.New(params)
 	if err != nil {
 		slog.Error("error creating Stripe checkout session", slog.String(logkey.TraceID, traceId), slog.String(logkey.ERROR, err.Error()))
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "Failed to create Stripe checkout session"})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to create Stripe checkout session"})
 		return
 	}
 
@@ -205,20 +204,18 @@ func (h *Handler) ProductCheckout(c *gin.Context) {
 	err = h.dbConf.CreateOrder(ctx, orderId, userId, productID, sessionStripe.AmountTotal)
 	if err != nil {
 		slog.Error("error creating order", slog.String(logkey.TraceID, traceId), slog.String(logkey.ERROR, err.Error()))
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "Failed to create order"})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to create order"})
 		return
 	}
 
 	// Respond with the Stripe session ID
 	c.JSON(http.StatusOK, gin.H{"checkout_session_id": sessionStripe.URL})
 
-	// Todo: change this
-	// h.produceEvents(orderId, userId, productID)
 }
 
 func (h *Handler) CartCheckout(c *gin.Context) {
 	/**
-	1. Call cart API, and get priceId, product, quantity etc.
+	1. Make DB call and get priceId, product, quantity etc.
 	2. Check product stock on product service, update order event accordingly
 	3. Create order create event, update DB, and publish to kafka {orderId, cartId, []carts_items}
 		3.1 Consumed by cart service => update cart

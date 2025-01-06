@@ -201,7 +201,7 @@ func (h *Handler) GetAllCartItems(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, carts.ErrEmptyCart) {
 			slog.Error("Error in fetching cart items", slog.Any("Error", err.Error()))
-			c.JSON(http.StatusNoContent, gin.H{"message": err.Error()})
+			c.JSON(http.StatusOK, gin.H{"message": "Cart is empty"})
 			return
 		}
 		slog.Error("Error in fetching cart items", slog.Any("Error", err.Error()))

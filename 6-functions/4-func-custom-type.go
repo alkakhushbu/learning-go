@@ -23,6 +23,11 @@ func operate(op operation, x, y int) {
 
 }
 
+// just like what we do in gin handlerFunc
+func testOp(next operation, x, y, z int) int {
+	return next(next(x, y), z)
+}
+
 func add(a, b int) int {
 	return a + b
 }

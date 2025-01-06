@@ -103,8 +103,10 @@ services:
     # remove this name to scale this service
     container_name: product-service
     # remove the ports as we don't want to expose the ports
-    # ports:
+    ports:
       # - "8083:80"
+      # expose this to test on postman
+      - "5001:5001"
     depends_on:
       - consul.alka
       - product-postgres.alka

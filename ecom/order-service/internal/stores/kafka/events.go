@@ -12,6 +12,7 @@ type OrderPaidEvent struct {
 	ProductId string     `json:"product_id"`
 	Quantity  int        `json:"quantity"`
 	CreatedAt time.Time  `json:"created_at"` // Timestamp of creation
+	CartId    string     `json:"cart_id"`
 	CartItems []CartItem `json:"cart_items"`
 }
 

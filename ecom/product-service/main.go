@@ -160,6 +160,13 @@ func startApp() error {
 
 	/*
 			//------------------------------------------------------//
+		               Starting the gRPC endpoint
+			//------------------------------------------------------//
+	*/
+	go handlers.RegistergRPCMethod(p)
+
+	/*
+			//------------------------------------------------------//
 		               Listening for error signals
 			//------------------------------------------------------//
 	*/
@@ -189,6 +196,7 @@ func startApp() error {
 		}
 	}
 	return nil
+
 }
 
 func setupSlog() {

@@ -25,6 +25,8 @@ buf config init
 buf build
 
 ## Configure a buf.gen.yaml file manually
+## use this command to create probuf file
+buf generate
 
 ## linting the current project
 buf lint

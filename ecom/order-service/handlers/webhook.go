@@ -51,6 +51,7 @@ func (h *Handler) Webhook(c *gin.Context) {
 		orderId := paymentIntent.Metadata["order_id"]
 		productID := paymentIntent.Metadata["product_id"]
 		userID := paymentIntent.Metadata["user_id"]
+		cartId := paymentIntent.Metadata["cart_id"]
 		slog.Info("Metadata received", slog.String(logkey.TraceID, traceId), slog.String("OrderID", orderId), slog.String("UserID", userID), slog.String("ProductID", productID))
 		if productID != "" {
 			go func() {
@@ -74,7 +75,6 @@ func (h *Handler) Webhook(c *gin.Context) {
 				slog.Info("Message produced", slog.Any("data", string(jsonData)))
 			}()
 		} else {
-			// cartId := paymentIntent.Metadata["cart_id"]
 			cartItemsString := paymentIntent.Metadata["cart_items"]
 
 			var cartItems []kafka.CartItem
@@ -87,7 +87,7 @@ func (h *Handler) Webhook(c *gin.Context) {
 				OrderId:   orderId,
 				ProductId: productID,
 				CartItems: cartItems,
-				Quantity:  1,
+				CartId:    cartId,
 				CreatedAt: time.Now().UTC(),
 			})
 			key := []byte(orderId)
@@ -97,11 +97,18 @@ func (h *Handler) Webhook(c *gin.Context) {
 				return
 			}
 			slog.Info("Message produced", slog.Any("data", string(jsonData)))
+
 		}
 		ctx := c.Request.Context()
 		err = h.dbConf.UpdateOrder(ctx, orderId, orders.StatusPaid, paymentIntent.ID)
 		if err != nil {
 			slog.Error("Failed to update order", slog.Any("error", err.Error()))
+			return
+		}
+
+		err = h.c.UpdateCartStatus(ctx, cartId, "CLOSED")
+		if err != nil {
+			slog.Error("Failed to update cart", slog.Any("error", err.Error()))
 			return
 		}
 		c.Status(http.StatusOK)
