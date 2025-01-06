@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"order-service/internal/auth"
@@ -346,7 +347,10 @@ func (h *Handler) CartCheckout(c *gin.Context) {
 			return
 		}
 		httpQuery := fmt.Sprintf("http://%s:%d/products/stock", address, port)
-		jsonData, err := json.Marshal(productIds)
+		productIdMap := map[string][]string{
+			"productIds": productIds,
+		}
+		jsonData, err := json.Marshal(productIdMap)
 		if err != nil {
 			slog.Error("error marshalling cart items", slog.String(logkey.TraceID, traceId))
 			productChan <- nil
@@ -379,7 +383,10 @@ func (h *Handler) CartCheckout(c *gin.Context) {
 			return
 		}
 		var productInfos []ProductServiceResponse
-		err = json.NewDecoder(resp.Body).Decode(&productInfos)
+		bytesResp, _ := io.ReadAll(resp.Body)
+		fmt.Println(string(bytesResp), "****************************")
+		err = json.Unmarshal(bytesResp, &productInfos)
+		// err = json.NewDecoder(resp.Body).Decode(&productInfos)
 		if err != nil {
 			slog.Error("error binding json", slog.String(logkey.TraceID, traceId), slog.Any(logkey.ERROR, err.Error()))
 			productChan <- nil
@@ -464,7 +471,7 @@ func (h *Handler) CartCheckout(c *gin.Context) {
 	// Log success operation
 	slog.Info("successfully initiated Stripe checkout session", slog.String("Trace ID", traceId), slog.String("ProductID", productID), slog.String("CheckoutSessionID", sessionStripe.ID))
 
-	err = h.dbConf.CreateOrder(ctx, orderId, userId, productID, sessionStripe.AmountTotal)
+	err = h.dbConf.CreateOrderForCart(ctx, orderId, userId, cartItems.CartID, sessionStripe.AmountTotal)
 	if err != nil {
 		slog.Error("error creating order", slog.String(logkey.TraceID, traceId), slog.String(logkey.ERROR, err.Error()))
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "Failed to create order"})

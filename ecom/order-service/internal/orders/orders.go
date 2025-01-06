@@ -60,6 +60,42 @@ func (c *Conf) CreateOrder(ctx context.Context, orderId, userId, productId strin
 	// Return the generated order ID if successful
 	return nil
 }
+
+func (c *Conf) CreateOrderForCart(ctx context.Context, orderId, userId, cartId string, totalPrice int64) error {
+	// Define the status and timestamps
+	status := StatusPending
+	createdAt := time.Now().UTC()
+	updatedAt := time.Now().UTC()
+
+	// Use a transaction to execute the insert
+	err := c.withTx(ctx, func(tx *sql.Tx) error {
+		// SQL query for inserting a new order and returning the generated ID
+		query := `
+		INSERT INTO orders
+		(id,user_id, cart_id, status, total_price, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		`
+
+		// Execute the query and capture the returned ID
+		res, err := tx.ExecContext(ctx, query, orderId, userId, cartId, status, totalPrice, createdAt, updatedAt)
+		if err != nil {
+			return fmt.Errorf("failed to insert order and retrieve ID: %w", err)
+		}
+		if num, err := res.RowsAffected(); num == 0 || err != nil {
+			return fmt.Errorf("failed to insert order and retrieve ID: no rows affected")
+		}
+		// Successfully inserted the order
+		return nil
+	})
+
+	if err != nil {
+		// Return an error if the transaction fails
+		return fmt.Errorf("failed to create order: %w", err)
+	}
+
+	// Return the generated order ID if successful
+	return nil
+}
 func (c *Conf) withTx(ctx context.Context, fn func(*sql.Tx) error) error {
 	tx, err := c.db.BeginTx(ctx, nil)
 	if err != nil {
